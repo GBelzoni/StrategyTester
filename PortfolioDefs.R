@@ -1,4 +1,4 @@
-source("http://www.rmetrics.org/Rmetrics.R")
+#source("http://www.rmetrics.org/Rmetrics.R")
 #install.Rmetrics()
 
 library(xts)
@@ -54,14 +54,27 @@ head(AORD$AORD.Close)
   )
   #Methods: GetData, UpdateData, currentData
   
-  MD1 = new("MarketData",Data=Spread)
+  MD1 = new("MarketData",Data=AORD)
   length(MD1@Data)
   str(MD1@Data)
   #quantmod chart
-  chartSeries(MD1@Data,theme="white",subset='2009-03-30::2012-06-10')
+  plot(MD1@Data['2008::2009'])
+  chartData = (AORD['2008/'])
+  index(AORD)
+  index(chartData)
+  head(as.zoo(chartData))
+  head(index(chartData,"Date")))
+  indexClass(MD1@Data)
+  indexClass(chartData)
+  summary(chartData)
+  indexFormat(chartData)="Date"
+  index(chartData)
+  summary(MD1@Data)
+  chartSeries(chartData,theme="white")
 
   
   EMA1=addEMA(n=10,col=2)
+  
   EMA1Vals=EMA1@TA.values
   EMA2=addEMA(n=20)
   EMA2Vals=EMA2@TA.values
@@ -69,13 +82,21 @@ head(AORD$AORD.Close)
   head(EMA1Vals)
   addBBands()  
   
-  Series0 = MD1@Data
-  Series1 = as.xts(zoo(EMA1Vals,order.by=index(MD1@Data)))
-  Series2 = as.xts(zoo(EMA2Vals,order.by=index(MD1@Data)))
+  
+  index(chartData)
+  Series0 = index(chartData)
+  Series1 = as.xts(zoo(EMA1Vals,order.by=index(chartData)))
+  Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData)))
 
   #Strategy - Crossover
   #assumes Series1 and Series 2 are xts
+  for( tm in index(chartData))
+  {
+      
+  }
+
   S1GreaterThanS2 = sign(Series1-Series2)
+  head(S1GreaterThanS2,50)
   CrossOverSignal = lag(S1GreaterThanS2,1)*S1GreaterThanS2
   CrossOverPoints = which(CrossOverSignal==-1)
   CrossOverDates = index(S1GreaterThanS2)[CrossOverPoints]  
@@ -125,8 +146,7 @@ head(xxx[,1])
 
 #Class - Market Data Analytics
     #Filters, Moving Averages, Correlations, PCA, spreads
-    
-
+  
 
 
 #Class - Trade
