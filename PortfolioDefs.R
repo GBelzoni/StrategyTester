@@ -7,15 +7,17 @@ library(quantmod)
 library(PerformanceAnalytics)
 library(debug)
 
+
+
+
 getSymbols('^AORD',src='yahoo',from="2007-01-01",to=Sys.Date())
+
 getSymbols('^FTSE',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('^HSI',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('^DJI',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('^GSPC',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('KO',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('PEP',src='yahoo',from="2007-01-01",to=Sys.Date())
-
-
 getFX('GBP/USD',src='yahoo',from=Sys.Date()-499,to=Sys.Date())
 
 plot(GBPUSD['2011-06-01/'])
@@ -45,18 +47,29 @@ abline(lm(spreadGSPCDJI[,4] ~ index(spreadGSPCDJI)))
 
 head(AORD$AORD.Close)
 
-#Class - Market Data
-  #Data member is an xts object have to format data into this to use
-  setClass("MarketData",
-      representation(
-        Data = "xts"
-        )
-  )
-  #Methods: GetData, UpdateData, currentData
-  
-  MD1 = new("MarketData",Data=AORD)
+
+  #New Market Data
+  MD1 = MarketData(AORD)
   length(MD1@Data)
   str(MD1@Data)
+  
+  xxx = list()
+  xxx$Notional=0
+  xxx$TradeName="Cash"
+  xxx$OtherProps=NA  
+  
+  x= c('a',"b")
+    
+  #New Portfolio
+  InitialPos = c(100,0)
+  Port1 = Portfolio(InitialPos)
+  showMethods(class="Portfolio")
+  Value(Port1)
+  
+  #New TradeStrategy
+  MAStrategy = TradeStrategy(MD1,Port1)
+    
+
   #quantmod chart
   plot(MD1@Data['2008::2009'])
   chartData = (AORD['2008/'])
@@ -71,7 +84,6 @@ head(AORD$AORD.Close)
   index(chartData)
   summary(MD1@Data)
   chartSeries(chartData,theme="white")
-
   
   EMA1=addEMA(n=10,col=2)
   
@@ -97,6 +109,31 @@ head(AORD$AORD.Close)
 
   S1GreaterThanS2 = sign(Series1-Series2)
   head(S1GreaterThanS2,50)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   CrossOverSignal = lag(S1GreaterThanS2,1)*S1GreaterThanS2
   CrossOverPoints = which(CrossOverSignal==-1)
   CrossOverDates = index(S1GreaterThanS2)[CrossOverPoints]  
