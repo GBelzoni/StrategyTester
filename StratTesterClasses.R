@@ -71,7 +71,10 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   setMethod("getNotional","Trade",function(object){return(object@Notional)}
   )
 
-  #PricingMethod
+
+  setGenericVerif(x="getNames",y  <- function(object){standardGeneric("getNames")})
+  setMethod("getNames","Trade",function(object){return(object@TradeName)}
+  )  #PricingMethod
   setGenericVerif(x="Price",y  <- function(object,MarketDataSlide){standardGeneric("Price")})
   #removeGeneric("Value")
   
@@ -80,10 +83,12 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
       if( object@TradeType == "Cash") {
         1
       } else if(object@TradeType == "Eq") {
-        Cl(MarketDataSlide@Data)  
+        as.numeric(coredata(Cl(MarketDataSlide@Data)))  
       } else {
+        cat('Trade Type Not Recognised \n')
         NULL
       } 
+    
     })
   #ValueMethod
   setGenericVerif(x="Value",y  <- function(object,MarketDataSlide){standardGeneric("Value")})
@@ -96,9 +101,9 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   T1 = Trade("Cash","Cash",100)
   T2 = Trade("Eq1","Eq",100)
   getNotional(T2)
-  TradeList = c(T1,T2)   
-  Price(T2,MDSlide1)
-  Value(T2,MDSlide1)
+  TradeList = c(T1,T2)  
+  (Price(T2,MDSlide1))
+  (Value(T1,MDSlide1))
 
 #Class - Porfolio
   #Data member for portfolio name, and tradenames
@@ -119,7 +124,7 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   P1@PortfolioName
   P1@Trades
 
-#Class - Portfolio Info
+#Class - PortfolioSlide 
   #Data MarketData, portfolio
   #Member for Price Info, and Value
   #Member for diagnostics - ie greeks
@@ -140,26 +145,26 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   setMethod("Price","PortfolioSlide", 
             function(object,MarketDataSlide){ 
               PriceVec = numeric(length(object@Portfolio@Trades))
-              PriceVec=lapply(object@Portfolio@Trades,Price, object@MarketDataSlide)
+              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketDataSlide)
+              names(PriceVec)=sapply(object@Portfolio@Trades,getNames)
               return(PriceVec)
   }
   )
   #ValueMethod
   setGenericVerif(x="Value",y  <- function(object,PricingData){standardGeneric("Value")})
-#   setMethod("Value","PortfolioSlide", 
-#             function(object,MarketDataSlide){
-#               Notionals = lapply(object@Portfolio@Trades, getNotional) 
-#               Notionals =  as.numeric(Notionals)
-#               return(as.numeric(Price(object,MarketDataSlide))*Notionals)
-#   )
-#     
-  #Test
+
+  setMethod("Value","PortfolioSlide",
+            function(object,MarketDataSlide){
+              Values = sapply(object@Portfolio@Trades, Value, object@MarketDataSlide)             
+              names(Values)=sapply(object@Portfolio@Trades,getNames)
+              return(Values)}
+  )
+
+#  #Test
   P1Slide = PortfolioSlide(P1,MDSlide1)
   Price(P1Slide)
-  Value(P1Slide)
-  
-
-
+  (Value(P1Slide)) 
+  V2=unlist(V1)
 
   #TradeStrategy
   #Data - MDobject, Portfolio, time, PL, PortfolioTS
@@ -169,8 +174,7 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
                MarketData = "MarketData",
                Portfolio = "Portfolio",
                CurrentTime = "integer", ##Hmm, have to make this adapt for different xts classes
-               PL  = "numeric",
-               PortfolioTS  = "numeric"
+               Results = "data.frame"
                )
     )
 
@@ -182,15 +186,14 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
       .Object@MarketData = MarketData_
       .Object@Portfolio = Portfolio_
       .Object@CurrentTime = index(MarketData_)[0]
-      .Object@PL = numeric(0)
-      .Object@PortfolioTS = numeric(0)
+      Results = data.frame()
       return(.Object)
       }
     
     )
   
-  TradeStrategy  <- function(MD,Portfolio_){
-    new(Class="TradeStrategy",MarketData=MD,Portfolio=Portfolio_)
+  TradeStrategy  <- function(MarketData_,Portfolio_){
+    new(Class="TradeStrategy",MarketData=MarketData,Portfolio=Portfolio_)
   }
   #need to define generic method before we can define class method
   setGenericVerif(x="TradeStrategy",y  <- function(object){standardGeneric("Value")})
