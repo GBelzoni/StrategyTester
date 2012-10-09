@@ -192,13 +192,13 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
     
     )
   
-  TradeStrategy  <- function(MarketData_,Portfolio_){
-    new(Class="TradeStrategy",MarketData=MarketData,Portfolio=Portfolio_)
-  }
   #need to define generic method before we can define class method
   setGenericVerif(x="TradeStrategy",y  <- function(object){standardGeneric("Value")})
-  setMethod("Value","Portfolio",
-            function(object) {
-              sum(object@Notionals)              
-            }
-  )
+  TradeStrategy  <- function(MarketData_,Portfolio_){
+    new(Class="TradeStrategy",MarketData=MarketData_,Portfolio=Portfolio_)
+  }
+  #Test
+  TS1=TradeStrategy(MD1,P1)
+  TS1
+
+  

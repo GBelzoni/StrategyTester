@@ -5,12 +5,14 @@ library(xts)
 library(zoo)
 library(quantmod)
 library(PerformanceAnalytics)
-library(debug)
+
+#library(debug)
 
 
 
 
-getSymbols('^AORD',src='yahoo',from="2007-01-01",to=Sys.Date())
+
+getSymbols('^AORD',src='yahoo',from="2007-01-01",to=(Sys.Date())
 
 getSymbols('^FTSE',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('^HSI',src='yahoo',from="2007-01-01",to=Sys.Date())
