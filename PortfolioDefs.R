@@ -8,11 +8,13 @@ library(PerformanceAnalytics)
 
 #library(debug)
 
+#Get All ordinaries data from yahoo and write to file - when uncommented
+#getSymbols('^AORD',src='yahoo',from="2007-01-01",to=(Sys.Date()))
+#write.table(AORD,"AORD.csv", sep=",",row.names=index(AORD))
+#remove(AORD)
 
+AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 
-
-
-getSymbols('^AORD',src='yahoo',from="2007-01-01",to=(Sys.Date())
 
 getSymbols('^FTSE',src='yahoo',from="2007-01-01",to=Sys.Date())
 getSymbols('^HSI',src='yahoo',from="2007-01-01",to=Sys.Date())
@@ -74,7 +76,7 @@ head(AORD$AORD.Close)
 
   #quantmod chart
   plot(MD1@Data['2008::2009'])
-  chartData = (AORD['2008/'])
+  chartData = (AORD['2008-02::2008-04'])
   index(AORD)
   index(chartData)
   head(as.zoo(chartData))

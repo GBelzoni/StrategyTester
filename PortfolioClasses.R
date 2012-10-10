@@ -1,5 +1,24 @@
 #Need Trade Classes
 source("TradeClasses.R")
+##Class - Porfolio
+  #Data member for portfolio name, and tradenames
+  setClass("Portfolio",
+           representation(
+             PortfolioName = "character",
+             Trades = "list"
+             )
+  )
+  Portfolio = function(PortfolioName_,Trades_){
+    new(Class="Portfolio",
+        PortfolioName = PortfolioName_,
+        Trades=Trades_
+        )}
+  
+  #Test Portfolio Class
+  P1=Portfolio("P1",TradeList)
+  P1@PortfolioName
+  P1@Trades
+
 #Class - PortfolioSlide 
   #Data MarketData, portfolio
   #Member for Price Info, and Value
@@ -40,5 +59,4 @@ source("TradeClasses.R")
   P1Slide = PortfolioSlide(P1,MDSlide1)
   Price(P1Slide)
   (Value(P1Slide)) 
-  V2=unlist(V1)
 

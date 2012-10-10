@@ -2,6 +2,11 @@
 ##R/S class system suck btw 
 ##See doc in R folder to describe R/S oo weirdenss
 
+library(xts)
+library(zoo)
+library(quantmod)
+library(PerformanceAnalytics)
+
 ##Redefine setGeneric so that we don't overwrite existing generic functions when
 ##defining methods for classe
 setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
@@ -10,7 +15,7 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   #Data member is an xts object have to format data into this to use
   setClass("MarketData",
       representation(
-        Data = "xts"
+        Data = "xts"        
         )
   )
   #Methods: GetData, UpdateData, currentDate, subsetData
