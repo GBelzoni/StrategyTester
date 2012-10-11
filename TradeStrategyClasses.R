@@ -34,11 +34,11 @@ source("PortfolioClasses.R")
 
   #Accessors
   setGenericVerif(x="getCT",y  <- function(object){standardGeneric("getCT")})
-  setMethod("getCT","TradStrategy",function(object){return(object@CurrentTime)})
+  setMethod("getCT","TradeStrategy",function(object){return(object@CurrentTime)})
   setGenericVerif(x="getData",y  <- function(object){standardGeneric("getData")})
-  setMethod("getData","TradStrategy",function(object){return(object@MarketData@Data)})
+  setMethod("getData","TradeStrategy",function(object){return(object@MarketData@Data)})
   setGenericVerif(x="getPortfolio",y  <- function(object){standardGeneric("getPortfolio")})
-  setMethod("getPortfolio","TradStrategy",function(object){return(object@Portfolio)})
+  setMethod("getPortfolio","TradeStrategy",function(object){return(object@Portfolio)})
 
 
 
@@ -46,36 +46,35 @@ source("PortfolioClasses.R")
   #This function defines trade strategy. 
   #It tells how to update notionals given MD and current portfolio
   setGenericVerif(x="updSignal",y  <- function(object,time){standardGeneric("updSignal")})
-  
+  #removeGeneric("updSignal")
   #THis is for MA crossover
   setMethod("updSignal","TradeStrategy", 
             function(object,time){ 
-              Data = getMD(object)
+              Data0 = MarketDataSlide(object@MarketData,(time-1))
+              Data1 = MarketDataSlide(object@MarketData,(time))
               #Previous Moving average vals
-              MAs0 = Data[(time-1),"MAs"]
-              MAl0 = Data[(time-1),"MAl"]
+              MAs0 = Data0["MAs"]
+              MAl0 = Data0["MAl"]
               #Current MA vals
-              MAs1 = Data[(time),"MAs"]
-              MAl1 = Data[(time),"MAl"]
+              MAs1 = Data1["MAs"]
+              MAl1 = Data1["MAl"]
+              
+              #Check if there is an upcrossing this step
+              if( ( MAs0 < MAl0 ) & ( MAs1 > MAl1 ) ){
+                signal = c(-1,1)
+              } else if ( ( MAs0 > MAl0 ) & ( MAs1 < MAl1 )) {
+                signal = c(1,-1)
+              } else {
+                signal = c(0,0)
+              }
             
-              
-              if(
-              
-              
-              
-  )
+              return(signal)
+            }
+          )
 
 
   
   #updatePortfolio implementation
   #This function defines trade strategy. It tells how to update notionals TradeStrategy MD
-
-  
-
-  #Te
-  #st and current portfolio
-  
-  TS1=TradeStrategy(MD1,P1)
-  TS1
 
   
