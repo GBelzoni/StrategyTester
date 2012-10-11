@@ -23,24 +23,24 @@ source("TradeClasses.R")
   #Data MarketData, portfolio
   #Member for Price Info, and Value
   #Member for diagnostics - ie greeks
-  setClass("PortfolioSlide",
+  setClass("PortfolioSlice",
            representation(
-             MarketDataSlide = "MarketDataSlide",
+             MarketData = "MarketData",
              Portfolio = "Portfolio")
   )
   #Initializer function
-  PortfolioSlide = function(Portfolio_,MarketDataSlide_){
-      new(Class="PortfolioSlide",
+  PortfolioSlice = function(Portfolio_,MarketData_){
+      new(Class="PortfolioSlice",
           Portfolio=Portfolio_,
-          MarketDataSlide = MarketDataSlide_)}
+          MarketData = MarketData_)}
   
   #PricingMethod
   setGenericVerif(x="Price",y  <- function(object){standardGeneric("Price")})
   #removeGeneric("Value")
-  setMethod("Price","PortfolioSlide", 
-            function(object,MarketDataSlide){ 
+  setMethod("Price","PortfolioSlice", 
+            function(object,MarketData){ 
               PriceVec = numeric(length(object@Portfolio@Trades))
-              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketDataSlide)
+              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketData)
               names(PriceVec)=sapply(object@Portfolio@Trades,getNames)
               return(PriceVec)
   }
@@ -48,15 +48,15 @@ source("TradeClasses.R")
   #ValueMethod
   setGenericVerif(x="Value",y  <- function(object,PricingData){standardGeneric("Value")})
 
-  setMethod("Value","PortfolioSlide",
-            function(object,MarketDataSlide){
-              Values = sapply(object@Portfolio@Trades, Value, object@MarketDataSlide)             
+  setMethod("Value","PortfolioSlice",
+            function(object,MarketData){
+              Values = sapply(object@Portfolio@Trades, Value, object@MarketData)             
               names(Values)=sapply(object@Portfolio@Trades,getNames)
               return(Values)}
   )
 
 #  #Test
-  P1Slide = PortfolioSlide(P1,MDSlide1)
+  P1Slide = PortfolioSlice(P1,MDSlide1)
   Price(P1Slide)
   (Value(P1Slide)) 
 
