@@ -11,6 +11,7 @@
 #write.table(AORD,"AORD.csv", sep=",",row.names=index(AORD))
 #remove(AORD)
 
+#Getting Data
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 #Creating EMA using quantmod/Performance Analytics
 chartData = (AORD['2008-02::2008-04'])
@@ -30,7 +31,6 @@ source('TradeStrategyClasses.R')
 
 
 MD = MarketData(AORD) #Create Market Data
-
 T1 = Trade("Cash","Cash",100) #Create Trade Objects
 T2 = Trade("AORD","Eq",100)
 Port1=Portfolio("Port1",c(T1,T2)) #Create Portfolio Objects
@@ -45,7 +45,7 @@ Price(PortfolioSlice) #Query slice for Price
 Value(PortfolioSlice) #Query slice for Value
 #Can add more query methods when necessary - e.g. Delta's, risk reports, etc
 
-
 #TradeStrategy Example
 TS1=TradeStrategy(MD1,P1)
 TS1
+
