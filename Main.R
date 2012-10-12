@@ -15,7 +15,7 @@
 
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 #Creating EMA using quantmod/Performance Analytics
-chartData = (AORD['2008-02::2009-02'])
+chartData = (AORD)#['2008-02::2009-02'])
 chartSeries(chartData,theme="white")
 EMA1=addEMA(n=10,col=2)
 EMA1Vals=EMA1@TA.values
@@ -84,15 +84,6 @@ updSig(TS1) #Should be buy
 
 
 #Run Strategy Loop
-timeInd
-
-MDS = MarketDataSlide(MD, timeInd)
-PS = PortfolioSlide( getPortfolio(TS1), MDS)
-Value(PS)
-updSig(TS1)
-TS1 = updatePortfolio(TS1)
-timeInd = TS1@CurrentTime
-
 TS1 = init_port()
 Dates = index(MD@Data)
 timeInd = TS1@CurrentTime
