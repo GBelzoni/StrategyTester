@@ -35,23 +35,23 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   #Even have MD generate curves object for slide and use Trade params to call this object
   #For now keep it simple
 
-#   #Data member is an xts object have to format data into this to use
-#   setClass("MarketDataSlide",
-#       representation(
-#         TimeIndex = "numeric", 
-#         TimeClass = "character",
-#         Data = "xts"
-#         )
-#   )
-# 
-#   #Methods: GetData, UpdateData, currentDate, subsetData
-#   MarketDataSlide = function(MarketData_, TimeIndex_){
-#     new(Class="MarketDataSlide",
-#         TimeIndex = TimeIndex_,
-#         TimeClass = "Date", #Have to fix to read POSIX date class
-#         Data = MarketData_@Data[TimeIndex_]
-#         )}
-#   
-#   #Test MarketData
-#   MDSlide1 = MarketDataSlide(MD1,1)
-# 
+  #Data member is an xts object have to format data into this to use
+  setClass("MarketDataSlide",
+      representation(
+        TimeIndex = "numeric", 
+        TimeClass = "character",
+        Data = "xts"
+        )
+  )
+
+  #Methods: GetData, UpdateData, currentDate, subsetData
+  MarketDataSlide = function(MarketData_, TimeIndex_){
+    new(Class="MarketDataSlide",
+        TimeIndex = TimeIndex_,
+        TimeClass = "Date", #Have to fix to read POSIX date class
+        Data = MarketData_@Data[TimeIndex_]
+        )}
+  
+  #Test MarketData
+  MDSlide1 = MarketDataSlide(MD1,1)
+
