@@ -7,7 +7,7 @@ source("PortfolioClasses.R")
              representation(
                MarketData = "MarketData",
                Portfolio = "Portfolio",
-               CurrentTime = "integer", ##Hmm, have to make this adapt for different xts classes
+               CurrentTime = "numeric", ##Hmm, have to make this adapt for different xts classes
                Results = "data.frame"
                )
     )
@@ -19,7 +19,7 @@ source("PortfolioClasses.R")
     definition= function(.Object,MarketData_,Portfolio_){
       .Object@MarketData = MarketData_
       .Object@Portfolio = Portfolio_
-      .Object@CurrentTime = index(MarketData_)[0]
+      .Object@CurrentTime = 1 #(index(MarketData_@Data)[1])
       Results = data.frame()
       return(.Object)
       }
@@ -45,27 +45,28 @@ source("PortfolioClasses.R")
   #updatePortfolio implementation
   #This function defines trade strategy. 
   #It tells how to update notionals given MD and current portfolio
-  setGenericVerif(x="updSignal",y  <- function(object,time){standardGeneric("updSignal")})
-  #removeGeneric("updSignal")
+  setGenericVerif(x="updSig",y  <- function(object){standardGeneric("updSig")})
+  #removeGeneric("updSig")
   #THis is for MA crossover
-  setMethod("updSignal","TradeStrategy", 
-            function(object,time){ 
+  setMethod("updSig","TradeStrategy", 
+            function(object){
+              time = object@CurrentTime
               Data0 = MarketDataSlide(object@MarketData,(time-1))
               Data1 = MarketDataSlide(object@MarketData,(time))
               #Previous Moving average vals
-              MAs0 = Data0["MAs"]
-              MAl0 = Data0["MAl"]
+              MAs0 = Data0@Data["MAs"]
+              MAl0 = Data0@Data["MAl"]
               #Current MA vals
-              MAs1 = Data1["MAs"]
-              MAl1 = Data1["MAl"]
+              MAs1 = Data1@Data["MAs"]
+              MAl1 = Data1@Data["MAl"]
               
               #Check if there is an upcrossing this step
               if( ( MAs0 < MAl0 ) & ( MAs1 > MAl1 ) ){
-                signal = c(-1,1)
+                signal = "buy"
               } else if ( ( MAs0 > MAl0 ) & ( MAs1 < MAl1 )) {
-                signal = c(1,-1)
+                signal = "sell"
               } else {
-                signal = c(0,0)
+                signal = "hold"
               }
             
               return(signal)
@@ -76,13 +77,57 @@ source("PortfolioClasses.R")
   
   #updatePortfolio implementation
   #This function defines trade strategy. It tells how to update notionals TradeStrategy MD
-
   
+  setGenericVerif(x="updatePortfolio",y  <- function(object){standardGeneric("updatePortfolio")})
+  #removeGeneric('updatePortfolio')
+  setMethod("updatePortfolio","TradeStrategy", 
+            function(object){
+                  signal = updSig(object)
+                  tradeNumber = length(getPortfolio(object)@Trades)+1
+                  if(signal == "buy"){
+                    #CreateBuyTrade
+                    # This is a bit of a hack - have to create trade object
+                    # with number as above. Job for pointers, but there are
+                    # no pointers so create R command as string then eval string
+                    tradeName = paste("Trade",tradeNumber,sep="")
+                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"eq\",100)",sep="")
+                    cmd = parse(text=trdDefString) #Convert string to R command
+                    eval(cmd) #Evaluate command which should create new trade with correct number
+                    
+                  
+                    #Add to portfolio
+                    addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
+                    cmdAdd = parse(text=addPrtString)
+                    eval(cmdAdd) 
+                    } else if(signal=="hold") {
+                    #CreateSellTrade
+                    # This is a bit of a hack - have to create trade object
+                    # with number as above. Job for pointers, but there are
+                    # no pointers so create R command as string then eval string
+                    tradeName = paste("Trade",tradeNumber,sep="")
+                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"eq\",-100)",sep="") #Note -100 for sell
+                    cmd = parse(text=trdDefString) #Convert string to R command
+                    eval(cmd) #Evaluate command which should create new trade with correct number
+                    
+                    
+                    #Add to portfolio
+                    addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
+                    cmdAdd = parse(text=addPrtString);eval(cmdAdd)
+                    
+                    } else {
+                    #Do nothing
+                  }
+              
+                  object@CurrentTime = object@CurrentTime + 1
+              }
+            
+            
+            )
 
-  #Te
-  #st and current portfolio
+  #Testing
   
-  TS1=TradeStrategy(MD1,P1)
-  TS1
+  TS1=TradeStrategy(MD,Port1)
+  TS1=
+  updSig(TS1,)  
 
   

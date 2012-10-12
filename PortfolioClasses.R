@@ -13,12 +13,24 @@ source("TradeClasses.R")
         PortfolioName = PortfolioName_,
         Trades=Trades_
         )}
-  
+
+  setGenericVerif(x="addTrade",y  <- function(object,Trade){standardGeneric("addTrade")})
+  #removeGeneric("Value")
+  setMethod("addTrade","Portfolio", 
+            function(object,Trade){ 
+              object@Trades = c(object@Trades, Trade) #Add Trade to Trade list
+              return(object)
+  }
+  )
+
   #Test Portfolio Class
   P1=Portfolio("P1",TradeList)
   P1@PortfolioName
   P1@Trades
-
+  T3 = Trade("T3","Eq",200)
+  P1=addTrade(P1,T3)
+  
+  
 #Class - PortfolioSlice 
   #Data MarketData, portfolio
   #Member for Price Info, and Value

@@ -12,6 +12,7 @@
 #remove(AORD)
 
 #Getting Data
+
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 #Creating EMA using quantmod/Performance Analytics
 chartData = (AORD['2008-02::2008-04'])
@@ -27,10 +28,11 @@ Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData)));colnames(Series2)="MAl
 chartData = cbind.xts(chartData,Series1,Series2 )
 colnames(chartData)
 
-source('TradeStrategyClasses.R')
+#Load Classes up to StrategyTester
+source('PortfolioClasses.R')
 
 
-MD = MarketData(AORD) #Create Market Data
+MD = MarketData(chartData) #Create Market Data
 T1 = Trade("Cash","Cash",100) #Create Trade Objects
 T2 = Trade("AORD","Eq",100)
 Port1=Portfolio("Port1",c(T1,T2)) #Create Portfolio Objects
@@ -46,6 +48,16 @@ Value(PortfolioSlice) #Query slice for Value
 #Can add more query methods when necessary - e.g. Delta's, risk reports, etc
 
 #TradeStrategy Example
-TS1=TradeStrategy(MD1,P1)
-TS1
+#Initialise empty cash portfolio
+Cash=Trade(Name_="Cash",Type_="Cash",0)
+#Initialise strategy
+TS1=TradeStrategy(MD,P1)
+#Have to move time forward till both MAs have values
+TS1@CurrentTime= TS1@CurrentTime +28
+#Check vals exist
+TS1@MarketData@Data[TS1@CurrentTime,]
 
+updSig(TS1)
+
+colnames(TS1@MarketData@Data)
+updSig(TS1)
