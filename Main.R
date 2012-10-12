@@ -15,7 +15,7 @@
 
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 #Creating EMA using quantmod/Performance Analytics
-chartData = (AORD['2008-02::2008-04'])
+chartData = (AORD['2008-02::2008-010'])
 chartSeries(chartData,theme="white")
 EMA1=addEMA(n=10,col=2)
 EMA1Vals=EMA1@TA.values
@@ -49,15 +49,37 @@ Value(PortfolioSlice) #Query slice for Value
 
 #TradeStrategy Example
 #Initialise empty cash portfolio
-Cash=Trade(Name_="Cash",Type_="Cash",0)
+Cash=c(Trade(Name_="Cash",Type_="Cash",0))
+Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
 #Initialise strategy
-TS1=TradeStrategy(MD,P1)
+TS1=TradeStrategy(MD,Port_MAtest)
 #Have to move time forward till both MAs have values
 TS1@CurrentTime= TS1@CurrentTime +28
 #Check vals exist
 TS1@MarketData@Data[TS1@CurrentTime,]
 
-updSig(TS1)
 
+#Testing updSignal function
 colnames(TS1@MarketData@Data)
 updSig(TS1)
+
+TS1@CurrentTime= 29
+maxLoop = length(index(MD@Data)) -29
+TradeSigs = character()
+
+	#Get Dates where trades occur
+	for(t in 1:maxLoop)
+	{
+		TradeSigs = c(TradeSigs,updSig(TS1))
+		TS1@CurrentTime = TS1@CurrentTime +1
+	}
+	TradeEvents = which(TradeSigs != "hold")
+	TradeDate = index(MD@Data)[TradeEvents]
+	TradeSigs[TradeEvents]
+
+#Testing Portfolio Update
+#Pick Event time
+TS1@CurrentTime=15+28
+updSig(TS1) #Should be buy
+dbg(TS1)
+

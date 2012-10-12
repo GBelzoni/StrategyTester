@@ -49,21 +49,21 @@ source("PortfolioClasses.R")
   #removeGeneric("updSig")
   #THis is for MA crossover
   setMethod("updSig","TradeStrategy", 
-            function(object){
+           function(object){
               time = object@CurrentTime
               Data0 = MarketDataSlide(object@MarketData,(time-1))
               Data1 = MarketDataSlide(object@MarketData,(time))
               #Previous Moving average vals
-              MAs0 = Data0@Data["MAs"]
-              MAl0 = Data0@Data["MAl"]
+              MAs0 = Data0@Data[,"MAs"]
+              MAl0 = Data0@Data[,"MAl"]
               #Current MA vals
-              MAs1 = Data1@Data["MAs"]
-              MAl1 = Data1@Data["MAl"]
+              MAs1 = Data1@Data[,"MAs"]
+              MAl1 = Data1@Data[,"MAl"]
               
               #Check if there is an upcrossing this step
-              if( ( MAs0 < MAl0 ) & ( MAs1 > MAl1 ) ){
+              if( ( MAs0 < MAl0 ) && ( MAs1 > MAl1 ) ){
                 signal = "buy"
-              } else if ( ( MAs0 > MAl0 ) & ( MAs1 < MAl1 )) {
+              } else if ( ( MAs0 > MAl0 ) && ( MAs1 < MAl1 )) {
                 signal = "sell"
               } else {
                 signal = "hold"
@@ -80,8 +80,8 @@ source("PortfolioClasses.R")
   
   setGenericVerif(x="updatePortfolio",y  <- function(object){standardGeneric("updatePortfolio")})
   #removeGeneric('updatePortfolio')
-  setMethod("updatePortfolio","TradeStrategy", 
-            function(object){
+ # setMethod("updatePortfolio","TradeStrategy", 
+         dbg =   function(object){
                   signal = updSig(object)
                   tradeNumber = length(getPortfolio(object)@Trades)+1
                   if(signal == "buy"){
@@ -122,7 +122,7 @@ source("PortfolioClasses.R")
               }
             
             
-            )
+      #      )
 
   #Testing
   
