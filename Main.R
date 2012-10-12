@@ -12,22 +12,21 @@
 #remove(AORD)
 
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
-source('TradeStrategyClasses.R')
-
-#quantmod chart
+#Creating EMA using quantmod/Performance Analytics
 chartData = (AORD['2008-02::2008-04'])
 chartSeries(chartData,theme="white")
-
 EMA1=addEMA(n=10,col=2)
 EMA1Vals=EMA1@TA.values
 EMA2=addEMA(n=20)
 EMA2Vals=EMA2@TA.values
+
 index(chartData)
-Series0 = index(chartData)
-Series1 = as.xts(zoo(EMA1Vals,order.by=index(chartData))); colnames(Series1)= "MAs"
-Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData))); colnames(Series2)='MAl'
-chartData = cbind(chartData, Series1,Series2)
-names(chartData)
+Series1 = as.xts(zoo(EMA1Vals,order.by=index(chartData)));colnames(Series1)="MAs"
+Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData)));colnames(Series2)="MAl"
+chartData = cbind.xts(chartData,Series1,Series2 )
+colnames(chartData)
+
+source('TradeStrategyClasses.R')
 
 
 MD = MarketData(AORD) #Create Market Data
