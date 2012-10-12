@@ -104,7 +104,7 @@ source("PortfolioClasses.R")
 					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
 					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
 					Trades = getPortfolio(object)@Trades
-					Trades[[1]]@Notional  = - Value(Trades[[length(Trades)]],MDStmp)
+					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 				
 					
 										
@@ -127,7 +127,7 @@ source("PortfolioClasses.R")
 					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
 					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
 					Trades = getPortfolio(object)@Trades
-					Trades[[1]]@Notional  = Value(Trades[[length(Trades)]],MDStmp)
+					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 					
 					
 					
@@ -149,5 +149,6 @@ source("PortfolioClasses.R")
   #Testing
   
    
+
 
   
