@@ -34,11 +34,12 @@ source("PortfolioClasses.R")
 
   #Accessors
   setGenericVerif(x="getCT",y  <- function(object){standardGeneric("getCT")})
-  setMethod("getCT","TradStrategy",function(object){return(object@CurrentTime)})
+  setMethod("getCT","TradeStrategy",function(object){return(object@CurrentTime)})
   setGenericVerif(x="getData",y  <- function(object){standardGeneric("getData")})
-  setMethod("getData","TradStrategy",function(object){return(object@MarketData@Data)})
+  setMethod("getData","
+            TradeStrategy",function(object){return(object@MarketData@Data)})
   setGenericVerif(x="getPortfolio",y  <- function(object){standardGeneric("getPortfolio")})
-  setMethod("getPortfolio","TradStrategy",function(object){return(object@Portfolio)})
+  setMethod("getPortfolio","TradeStrategy",function(object){return(object@Portfolio)})
 
 
 
@@ -72,7 +73,7 @@ source("PortfolioClasses.R")
 
   
 
-  #Te
+  #Te  
   #st and current portfolio
   
   TS1=TradeStrategy(MD1,P1)
