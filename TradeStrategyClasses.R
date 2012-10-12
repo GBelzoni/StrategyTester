@@ -80,8 +80,8 @@ source("PortfolioClasses.R")
   
   setGenericVerif(x="updatePortfolio",y  <- function(object){standardGeneric("updatePortfolio")})
   #removeGeneric('updatePortfolio')
- # setMethod("updatePortfolio","TradeStrategy", 
-         dbg =   function(object){
+  #setMethod("updatePortfolio","TradeStrategy", 
+		  updatePortfoliodbg = function(object){
                   signal = updSig(object)
                   tradeNumber = length(getPortfolio(object)@Trades)+1
                   if(signal == "buy"){
@@ -90,7 +90,7 @@ source("PortfolioClasses.R")
                     # with number as above. Job for pointers, but there are
                     # no pointers so create R command as string then eval string
                     tradeName = paste("Trade",tradeNumber,sep="")
-                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"eq\",100)",sep="")
+                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"Eq\",100)",sep="")
                     cmd = parse(text=trdDefString) #Convert string to R command
                     eval(cmd) #Evaluate command which should create new trade with correct number
                     
@@ -99,13 +99,22 @@ source("PortfolioClasses.R")
                     addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
                     cmdAdd = parse(text=addPrtString)
                     eval(cmdAdd) 
-                    } else if(signal=="hold") {
+					
+					#Update Cash for trade
+					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
+					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
+					Trades = getPortfolio(object)@Trades
+					Trades[[1]]@Notional  = - Value(Trades[[length(Trades)]],MDStmp)
+				
+					
+										
+                    } else if(signal=="sell") {
                     #CreateSellTrade
                     # This is a bit of a hack - have to create trade object
                     # with number as above. Job for pointers, but there are
                     # no pointers so create R command as string then eval string
                     tradeName = paste("Trade",tradeNumber,sep="")
-                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"eq\",-100)",sep="") #Note -100 for sell
+                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"Eq\",-100)",sep="") #Note -100 for sell
                     cmd = parse(text=trdDefString) #Convert string to R command
                     eval(cmd) #Evaluate command which should create new trade with correct number
                     
@@ -114,20 +123,31 @@ source("PortfolioClasses.R")
                     addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
                     cmdAdd = parse(text=addPrtString);eval(cmdAdd)
                     
+					#Update Cash for trade
+					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
+					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
+					Trades = getPortfolio(object)@Trades
+					Trades[[1]]@Notional  = Value(Trades[[length(Trades)]],MDStmp)
+					
+					
+					
                     } else {
                     #Do nothing
                   }
               
                   object@CurrentTime = object@CurrentTime + 1
+				  #Update Cash for any trades
+					
+	
+				  
+				  return(object)
               }
             
             
-      #      )
+          #  )
 
   #Testing
   
-  TS1=TradeStrategy(MD,Port1)
-  TS1=
-  updSig(TS1,)  
+   
 
   

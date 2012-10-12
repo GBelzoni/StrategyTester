@@ -81,5 +81,52 @@ TradeSigs = character()
 #Pick Event time
 TS1@CurrentTime=15+28
 updSig(TS1) #Should be buy
-dbg(TS1)
 
+
+#Run Strategy Loop
+timeInd
+
+MDS = MarketDataSlide(MD, timeInd)
+PS = PortfolioSlide( getPortfolio(TS1), MDS)
+Value(PS)
+updSig(TS1)
+TS1 = updatePortfolio(TS1)
+timeInd = TS1@CurrentTime
+
+TS1 = init_port()
+Dates = index(MD@Data)
+timeInd = TS1@CurrentTime
+maxLoop = length(index(MD@Data))
+TS1@Results = data.frame( Time = 0,  Value = 0) 
+
+for( i in 10:400)
+{
+	MDS = MarketDataSlide(MD, timeInd)
+	PS = PortfolioSlide( getPortfolio(TS1), MDS)
+	updSig(TS1)
+	TS1 = updatePortfoliodbg(TS1)
+	TS1@Results = rbind(TS1@Results , c(Dates[timeInd],sum(Value(PS))))
+	timeInd = TS1@CurrentTime
+	
+}
+TS1@Portfolio@Trades[1]
+TS1@Results
+plot(TS1@Results, type ='l')
+
+
+a=1:10
+tail(a,1)
+
+init_port = function(){
+	#TradeStrategy Example
+	#Initialise empty cash portfolio
+	Cash=c(Trade(Name_="Cash",Type_="Cash",0))
+	Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
+	#Initialise strategy
+	TS1=TradeStrategy(MD,Port_MAtest)
+	#Have to move time forward till both MAs have values
+	TS1@CurrentTime= TS1@CurrentTime +42
+	#Check vals exist
+	TS1@MarketData@Data[TS1@CurrentTime,]
+	return(TS1)
+}
