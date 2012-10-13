@@ -1,8 +1,8 @@
 #Need
-# library(xts)
-# library(zoo)
-# library(quantmod)
-# library(PerformanceAnalytics)
+library(xts)
+library(zoo)
+library(quantmod)
+library(PerformanceAnalytics)
 ##This library stuffs up tab completes
 #library(debug)
 
@@ -96,13 +96,15 @@ for( i in 1:(maxLoop-timeInd))
 	updSig(TS1)
 	TS1 = updatePortfoliodbg(TS1)
 	PS = PortfolioSlide( getPortfolio(TS1), MDS)
-	TS1@Results = rbind(TS1@Results , c(Dates[timeInd],sum(Value(PS))))
+	TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
 	timeInd = TS1@CurrentTime
 	
 }
 TS1@Portfolio@Trades
 TS1@Results
 plot(TS1@Results[-1,], type ='l')
+Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
+plot(Res2[-1,])
 abline(h=0)
 
 a=1:10
