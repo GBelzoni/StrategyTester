@@ -26,8 +26,8 @@ source("MarketDataClasses.R")
   setMethod("getNames","Trade",function(object){return(object@TradeName)}
   ) 
   #PricingMethod
-  setGenericVerif(x="Price",y  <- function(object,MarketDataSlice){standardGeneric("Price")})
-  #removeGeneric("Price")
+  setGenericVerif(x="Price",y  <- function(object,MarketDataSlice,...){standardGeneric("Price")})
+  #removeGeneric("Value")
   
   #This is the method which needs to be made polymorphic for options etc
   setMethod("Price","Trade", function(object,MarketDataSlice) { 
@@ -42,7 +42,7 @@ source("MarketDataClasses.R")
     
     })
   #ValueMethod
-  setGenericVerif(x="Value",y  <- function(object,MarketDataSlice){standardGeneric("Value")})
+  setGenericVerif(x="Value",y  <- function(object,MarketDataSlice,...){standardGeneric("Value")})
   setMethod("Value","Trade", 
             function(object,MarketDataSlice){
               Price(object,MarketDataSlice)*object@Notional}

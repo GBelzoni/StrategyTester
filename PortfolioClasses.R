@@ -64,10 +64,10 @@ source("TradeClasses.R")
   )}
   
   #PricingMethod
-  setGenericVerif(x="Price",y  <- function(object){standardGeneric("Price")})
+  setGenericVerif(x="Price",y  <- function(object,MarketDataSlice){standardGeneric("Price")})
   #removeGeneric("Value")
   setMethod("Price","PortfolioSlice", 
-            function(object,MarketDataSlide){ 
+            function(object,MarketDataSlice){ 
               PriceVec = numeric(length(object@Portfolio@Trades))
               PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketDataSlice)
               names(PriceVec)=sapply(object@Portfolio@Trades,getNames)

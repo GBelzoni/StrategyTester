@@ -85,32 +85,6 @@ updSig(TS1) #Should be buy
 
 
 #Run Strategy Loop
-TS1 = init_port()
-Dates = index(MD@Data)
-timeInd = TS1@CurrentTime
-maxLoop = length(index(MD@Data))
-TS1@Results = data.frame( Time = 0,  Value = 0) 
-
-for( i in 1:(maxLoop-timeInd))
-{
-	MDS = MarketDataSlide(MD, timeInd)
-	updSig(TS1)
-	TS1 = updatePortfoliodbg(TS1)
-	PS = PortfolioSlide( getPortfolio(TS1), MDS)
-	TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
-	timeInd = TS1@CurrentTime
-	
-}
-TS1@Portfolio@Trades
-TS1@Results
-plot(TS1@Results[-1,], type ='l')
-Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
-plot(Res2[-1,])
-abline(h=0)
-
-a=1:10
-tail(a,1)
-
 init_port = function(){
 	#TradeStrategy Example
 	#Initialise empty cash portfolio
@@ -124,3 +98,31 @@ init_port = function(){
 	TS1@MarketData@Data[TS1@CurrentTime,]
 	return(TS1)
 }
+
+TS1 = init_port()
+Dates = index(MD@Data)
+timeInd = TS1@CurrentTime
+maxLoop = length(index(MD@Data))
+TS1@Results = data.frame( Time = 0,  Value = 0) 
+
+for( i in 1:(maxLoop-timeInd))
+{
+	TS1 = updatePortfolio(TS1)
+	PS = PortfolioSlice( getPortfolio(TS1),  MD, timeInd)
+	TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
+	timeInd = TS1@CurrentTime
+	
+}
+
+
+
+TS1@Portfolio@Trades
+TS1@Results
+plot(TS1@Results[-1,], type ='l')
+Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
+plot(Res2[-1,])
+abline(h=0)
+
+a=1:10
+tail(a,1)
+

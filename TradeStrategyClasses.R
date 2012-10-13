@@ -48,17 +48,20 @@ source("PortfolioClasses.R")
   setGenericVerif(x="updSig",y  <- function(object){standardGeneric("updSig")})
   #removeGeneric("updSig")
   #THis is for MA crossover
-  setMethod("updSig","TradeStrategy", 
+	PS1 = PortfolioSlice(P1,MD1,1)@MarketDataSlice@Data
+	setMethod("updSig","TradeStrategy", 
            function(object){
               time = object@CurrentTime
-              Data0 = MarketDataSlide(object@MarketData,(time-1))
-              Data1 = MarketDataSlide(object@MarketData,(time))
+             
+			  
+			  Data0 = PortfolioSlice( object@Portfolio, object@MarketData,(time-1))@MarketDataSlice@Data
+              Data1 = PortfolioSlice(object@Portfolio,object@MarketData, time)@MarketDataSlice@Data
               #Previous Moving average vals
-              MAs0 = Data0@Data[,"MAs"]
-              MAl0 = Data0@Data[,"MAl"]
+              MAs0 = Data0[,"MAs"]
+              MAl0 = Data0[,"MAl"]
               #Current MA vals
-              MAs1 = Data1@Data[,"MAs"]
-              MAl1 = Data1@Data[,"MAl"]
+              MAs1 = Data1[,"MAs"]
+              MAl1 = Data1[,"MAl"]
               
               #Check if there is an upcrossing this step
               if( ( MAs0 < MAl0 ) && ( MAs1 > MAl1 ) ){
@@ -80,8 +83,8 @@ source("PortfolioClasses.R")
   
   setGenericVerif(x="updatePortfolio",y  <- function(object){standardGeneric("updatePortfolio")})
   #removeGeneric('updatePortfolio')
-  #setMethod("updatePortfolio","TradeStrategy", 
-		  updatePortfoliodbg = function(object){
+  setMethod("updatePortfolio","TradeStrategy", 
+		  function(object){
                   signal = updSig(object)
                   tradeNumber = length(getPortfolio(object)@Trades)+1
                   if(signal == "buy"){
@@ -90,8 +93,11 @@ source("PortfolioClasses.R")
                     # with number as above. Job for pointers, but there are
                     # no pointers so create R command as string then eval string
                     tradeName = paste("Trade",tradeNumber,sep="")
-                    trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"Eq\",100)",sep="")
-                    cmd = parse(text=trdDefString) #Convert string to R command
+					#trdDefString = "<<TradeName>> = Trade(\"<<TradeName>>\",\"Eq\",<<Notional>>)"
+					#(gsub("<<Notional>>", 100 , gsub("<<TradeName>>","blah",trdDefString)))
+					trdDefString = paste(tradeName,"=Trade(\"",tradeName,"\",\"Eq\",100)",sep="")
+					                    
+					cmd = parse(text=trdDefString) #Convert string to R command
                     eval(cmd) #Evaluate command which should create new trade with correct number
                     
                   
@@ -102,7 +108,6 @@ source("PortfolioClasses.R")
 					
 					#Update Cash for trade
 					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
-					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
 					Trades = getPortfolio(object)@Trades
 					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 				
@@ -125,7 +130,6 @@ source("PortfolioClasses.R")
                     
 					#Update Cash for trade
 					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
-					TradeVal = PortfolioSlide(getPortfolio(object),MDStmp)
 					Trades = getPortfolio(object)@Trades
 					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 					
@@ -142,11 +146,32 @@ source("PortfolioClasses.R")
 				  
 				  return(object)
               }
-            
-            
-          #  )
+            )
 
-  #Testing
+  
+			
+setGenericVerif(x="runStrategy",y  <- function(object){standardGeneric("runStrategy")})
+#removeGeneric('updatePortfolio')
+setMethod("runStrategy","TradeStrategy", 
+		function(object){
+			timeInd = TS1@CurrentTime
+			maxLoop = length(index(MD@Data))
+			TS1@Results = data.frame( Time = 0,  Value = 0) 
+			
+			for( i in 1:(maxLoop-timeInd))
+			{
+				TS1 = updatePortfolio(TS1)
+				PS = PortfolioSlice( getPortfolio(TS1),  MD, timeInd)
+				TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
+				timeInd = TS1@CurrentTime
+				
+			}		
+			
+			return(object)
+		}
+)
+
+#Testing
   
    
 
