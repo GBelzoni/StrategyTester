@@ -26,15 +26,15 @@ source("MarketDataClasses.R")
   setMethod("getNames","Trade",function(object){return(object@TradeName)}
   ) 
   #PricingMethod
-  setGenericVerif(x="Price",y  <- function(object,MarketDataSlide){standardGeneric("Price")})
-  #removeGeneric("Value")
+  setGenericVerif(x="Price",y  <- function(object,MarketDataSlice){standardGeneric("Price")})
+  #removeGeneric("Price")
   
   #This is the method which needs to be made polymorphic for options etc
-  setMethod("Price","Trade", function(object,MarketDataSlide) { 
+  setMethod("Price","Trade", function(object,MarketDataSlice) { 
       if( object@TradeType == "Cash") {
         1
       } else if(object@TradeType == "Eq") {
-        as.numeric(coredata(Cl(MarketDataSlide@Data)))  
+        as.numeric(coredata(Cl(MarketDataSlice@Data)))  
       } else {
         cat('Trade Type Not Recognised \n')
         NULL
@@ -42,10 +42,10 @@ source("MarketDataClasses.R")
     
     })
   #ValueMethod
-  setGenericVerif(x="Value",y  <- function(object,MarketDataSlide){standardGeneric("Value")})
+  setGenericVerif(x="Value",y  <- function(object,MarketDataSlice){standardGeneric("Value")})
   setMethod("Value","Trade", 
-            function(object,MarketDataSlide){
-              Price(object,MarketDataSlide)*object@Notional}
+            function(object,MarketDataSlice){
+              Price(object,MarketDataSlice)*object@Notional}
   )
 
   #Test Trade Class

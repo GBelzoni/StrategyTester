@@ -36,7 +36,7 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   #For now keep it simple
 
   #Data member is an xts object have to format data into this to use
-  setClass("MarketDataSlide",
+  setClass("MarketDataSlice",
       representation(
         TimeIndex = "numeric", 
         TimeClass = "character",
@@ -45,13 +45,13 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   )
 
   #Methods: GetData, UpdateData, currentDate, subsetData
-  MarketDataSlide = function(MarketData_, TimeIndex_){
-    new(Class="MarketDataSlide",
+  MarketDataSlice = function(MarketData_, TimeIndex_){
+    new(Class="MarketDataSlice",
         TimeIndex = TimeIndex_,
         TimeClass = "Date", #Have to fix to read POSIX date class
         Data = MarketData_@Data[TimeIndex_]
         )}
   
   #Test MarketData
-  MDSlide1 = MarketDataSlide(MD1,1)
+  MDSlide1 = MarketDataSlice(MD1,1)
 

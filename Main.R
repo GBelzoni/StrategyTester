@@ -1,4 +1,5 @@
 #Need
+rm(list=ls())
 library(xts)
 library(zoo)
 library(quantmod)

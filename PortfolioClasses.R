@@ -37,14 +37,31 @@ source("TradeClasses.R")
   #Member for diagnostics - ie greeks
   setClass("PortfolioSlice",
            representation(
-             MarketData = "MarketDataSlide",
+             MarketDataSlice = "MarketDataSlice",
              Portfolio = "Portfolio")
   )
+  
+  #Constructor Initialise
+  setMethod(
+		  f="initialize",
+		  signature="PortfolioSlice",
+		  definition= function(.Object,Portfolio, MarketData,TimeIndex){
+			  .Object@MarketDataSlice = MarketDataSlice(MarketData_ = MarketData,TimeIndex_ = TimeIndex)
+			  .Object@Portfolio = Portfolio_
+			  #.Object@CurrentTime = (index(MarketData_@Data)[1])
+			  Results = data.frame()
+			  return(.Object)
+		  }
+  
+  )
+  
   #Initializer function
-  PortfolioSlice = function(Portfolio_,MarketData_){
+  PortfolioSlice = function(Portfolio_,MarketData_,TimeIndex_){
       new(Class="PortfolioSlice",
           Portfolio=Portfolio_,
-          MarketData = MarketData_)}
+          MarketData = MarketData_,
+		  TimeIndex = TimeIndex_
+  )}
   
   #PricingMethod
   setGenericVerif(x="Price",y  <- function(object){standardGeneric("Price")})
@@ -68,7 +85,7 @@ source("TradeClasses.R")
   )
 
 #  #Test
-  P1Slide = PortfolioSlice(P1,MDSlide1)
+  P1Slide = PortfolioSlice(P1,MarketData_ = MD1, TimeIndex_ = 1)
   Price(P1Slide)
   (Value(P1Slide)) 
 
