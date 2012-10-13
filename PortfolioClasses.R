@@ -47,7 +47,7 @@ source("TradeClasses.R")
 		  signature="PortfolioSlice",
 		  definition= function(.Object,Portfolio, MarketData,TimeIndex){
 			  .Object@MarketDataSlice = MarketDataSlice(MarketData_ = MarketData,TimeIndex_ = TimeIndex)
-			  .Object@Portfolio = Portfolio_
+			  .Object@Portfolio = Portfolio
 			  #.Object@CurrentTime = (index(MarketData_@Data)[1])
 			  Results = data.frame()
 			  return(.Object)
@@ -69,7 +69,7 @@ source("TradeClasses.R")
   setMethod("Price","PortfolioSlice", 
             function(object,MarketDataSlide){ 
               PriceVec = numeric(length(object@Portfolio@Trades))
-              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketData)
+              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketDataSlice)
               names(PriceVec)=sapply(object@Portfolio@Trades,getNames)
               return(PriceVec)
   }
@@ -79,13 +79,13 @@ source("TradeClasses.R")
 
   setMethod("Value","PortfolioSlice",
             function(object,MarketDataSlide){
-              Values = sapply(object@Portfolio@Trades, Value, object@MarketData)             
+              Values = sapply(object@Portfolio@Trades, Value, object@MarketDataSlice)             
               names(Values)=sapply(object@Portfolio@Trades,getNames)
               return(Values)}
   )
 
 #  #Test
-  P1Slide = PortfolioSlice(P1,MarketData_ = MD1, TimeIndex_ = 1)
+  P1Slide = PortfolioSlice(Portfolio_ = P1,MarketData_ = MD1, TimeIndex_ = 1)
   Price(P1Slide)
   (Value(P1Slide)) 
 
