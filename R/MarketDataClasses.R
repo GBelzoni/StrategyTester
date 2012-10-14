@@ -25,7 +25,7 @@ setClass("MarketData",
   
   #Test MarketData
   #Load AORD using quantmod package - All Ordinary index
-	AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
+  AORD = as.xts(as.zoo(read.table("../Data/AORD.csv",header=T,sep=",")))
   MD1 = MarketData(AORD)
 
 #Class - Market Data Slide

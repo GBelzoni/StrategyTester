@@ -45,12 +45,14 @@ Value(T2,MDSlice)
 #Put trades in a Portfolio and Value for a given slice of time
 #PortfolioSlice constructor
 time = 1 #Pice time
+Port1 = Portfolio("Port1",c(T1,T2))
 PortfolioSlice = PortfolioSlice(Port1,MD,time) #Create Portfolio slice
 Price(PortfolioSlice) #Query slice for Price
 Value(PortfolioSlice) #Query slice for Value
 #Can add more query methods when necessary - e.g. Delta's, risk reports, etc
 
 #TradeStrategy Example
+source('TradeStrategyClasses.R')
 #Initialise empty cash portfolio - strategy will trade accordingly
 #I assume zero interest rate by setting price of cash =1. 
 #Can change by having P_cash grow by interest rate - set up an ir profile
@@ -75,16 +77,16 @@ TS1@MarketData@Data[TS1@CurrentTime,]
 TS1=TradeStrategy(MD,Port_MAtest,21)
 TS1 = runStrategy(TS1)
 
-
-TradeEvents = which(Re != "hold")
+#Find where Trade Events occured
+TradeEvents = which(TS1@Results[,"Signal"] != "hold")
 TradeDate = index(MD@Data)[TradeEvents]
-TradeSigs[TradeEvents]
+TradeSigs= TS1@Results[TradeEvents,"Signal"]
 
-TS1@Results
+TradeDate
+TradeSigs
 
-
-TS1@Portfolio@Trades
-
+chartSeries(chartData, theme="white")
+abline(h=5400)
 plot(TS1@Results[-1,1:2], type ='l')
 Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
 plot(Res2[-1,])

@@ -85,7 +85,7 @@ source("TradeClasses.R")
   )
 
 #  #Test
-  P1Slide = PortfolioSlice(Portfolio_ = P1,MarketData_ = MD1, TimeIndex_ = 1)
-  Price(P1Slide)
-  (Value(P1Slide)) 
+  P1Slice = PortfolioSlice(Portfolio_ = P1,MarketData_ = MD1, TimeIndex_ = 1)
+  Price(P1Slice)
+  (Value(P1Slice)) 
 
