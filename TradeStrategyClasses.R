@@ -107,7 +107,7 @@ source("PortfolioClasses.R")
                     eval(cmdAdd) 
 					
 					#Update Cash for trade
-					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
+					MDStmp = MarketDataSlice(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
 					Trades = getPortfolio(object)@Trades
 					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 				
@@ -129,7 +129,7 @@ source("PortfolioClasses.R")
                     cmdAdd = parse(text=addPrtString);eval(cmdAdd)
                     
 					#Update Cash for trade
-					MDStmp = MarketDataSlide(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
+					MDStmp = MarketDataSlice(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
 					Trades = getPortfolio(object)@Trades
 					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
 					
@@ -162,13 +162,14 @@ runStrategy =		function(object){
 			#object@Results = data.frame( Time = 0,  Value = 0, Signal = "hold") 
 			object@Results = data.frame(matrix(nrow = (maxLoop-timeInd), ncol =3))
 			colnames(object@Results)=c("Time","Value","Signal")
-			browser()
+			
 			for( i in 1:(maxLoop-timeInd))
 			{
 				signal = updSig(object)
 				object = updatePortfolio(object)
 				PS = PortfolioSlice( getPortfolio(object),  MD, timeInd)
-				object@Results[i,] = c(object@Results , timeInd,sum(Value(PS)),signal)
+				#browser()
+				object@Results[i,] = c(timeInd,sum(Value(PS)),signal)
 				timeInd = object@CurrentTime
 				
 			}		

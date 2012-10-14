@@ -34,22 +34,26 @@ source('PortfolioClasses.R')
 
 
 MD = MarketData(chartData) #Create Market Data
+
+#Create trades and value against a slice of Market Data
 T1 = Trade("Cash","Cash",100) #Create Trade Objects
 T2 = Trade("AORD","Eq",100)
-Port1=Portfolio("Port1",c(T1,T2)) #Create Portfolio Objects
+MDSlice = MarketDataSlice(MD,1)#Create MarketData time slice.Port1=Portfolio("Port1",c(T1,T2)) #Create Portfolio Objects
+Value(T1,MDSlice)
+Value(T2,MDSlice)
 
-#Create timeslice info for different times
-#TODO - rewrite classes to get rid of MarketDataSlice. Can include functionality in
+#Put trades in a Portfolio and Value for a given slice of time
 #PortfolioSlice constructor
 time = 1 #Pice time
-MDSlice = MarketDataSlice(MD,1)#Create MarketData time slice.
 PortfolioSlice = PortfolioSlice(Port1,MD,time) #Create Portfolio slice
 Price(PortfolioSlice) #Query slice for Price
 Value(PortfolioSlice) #Query slice for Value
 #Can add more query methods when necessary - e.g. Delta's, risk reports, etc
 
 #TradeStrategy Example
-#Initialise empty cash portfolio
+#Initialise empty cash portfolio - strategy will trade accordingly
+#I assume zero interest rate by setting price of cash =1. 
+#Can change by having P_cash grow by interest rate - set up an ir profile
 Cash=c(Trade(Name_="Cash",Type_="Cash",0))
 Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
 #Initialise strategy
@@ -57,59 +61,24 @@ TS1=TradeStrategy(MD,Port_MAtest,21)
 #Check vals exist
 TS1@MarketData@Data[TS1@CurrentTime,]
 
-
-#Testing updSignal function
-colnames(TS1@MarketData@Data)
-updSig(TS1)
-
-TS1@CurrentTime= 29
-maxLoop = length(index(MD@Data)) -29
-TradeSigs = character()
-
-	#Get Dates where trades occur
-	for(t in 1:maxLoop)
-	{
-		TradeSigs = c(TradeSigs,updSig(TS1))
-		TS1@CurrentTime = TS1@CurrentTime +1
-	}
-	TradeEvents = which(TradeSigs != "hold")
-	TradeDate = index(MD@Data)[TradeEvents]
-	TradeSigs[TradeEvents]
-
-#Testing Portfolio Update
-#Pick Event time
-TS1@CurrentTime=15+28
-updSig(TS1) #Should be buy
-
-
-#Run Strategy Loop
-init_port = function(){
-	#TradeStrategy Example
-	#Initialise empty cash portfolio
-	Cash=c(Trade(Name_="Cash",Type_="Cash",0))
-	Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
-	#Initialise strategy
-	TS1=TradeStrategy(MD,Port_MAtest,21)
-	return(TS1)
-}
-length(index(MD@Data))
-TS1 = init_port()
-Dates = index(MD@Data)
-timeInd = TS1@CurrentTime
-maxLoop = length(index(MD@Data))
-TS1@Results = data.frame( Time = 0,  Value = 0) 
-
-for( i in 1:(maxLoop-timeInd))
-{
-	TS1 = updatePortfolio(TS1)
-	PS = PortfolioSlice( getPortfolio(TS1),  MD, timeInd)
-	TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
-	timeInd = TS1@CurrentTime
-	
-}
-
-
+#The Trade Strategy class has some useful members
+#- updSignal, this generates trade signal "buy", "hold", "sell"
+	updSig(TS1) #Should be sell
+# -updatePortfolio, this updates portfolio by making trades if signal requires
+	length(TS1@Portfolio@Trades) #only cash in Portfolio
+	TS1@CurrentTime #Current time index
+	TS1=updatePortfolio(TS1)
+	length(TS1@Portfolio@Trades) #now two trades as signal was sell
+	TS1@CurrentTime #Current time index
+# -runStrategy, loops updatePortfolio over Market Data and collects results
+#Initialise strategy back to time 21 and only cash in Port
+TS1=TradeStrategy(MD,Port_MAtest,21)
 TS1 = runStrategy(TS1)
+
+
+TradeEvents = which(Re != "hold")
+TradeDate = index(MD@Data)[TradeEvents]
+TradeSigs[TradeEvents]
 
 TS1@Results
 
@@ -121,6 +90,4 @@ Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
 plot(Res2[-1,])
 abline(h=0)
 
-a=1:10
-tail(a,1)
 
