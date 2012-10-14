@@ -1,3 +1,4 @@
+
 ##Classes for Strategy tester
 ##R/S class system suck btw 
 ##See doc in R folder to describe R/S oo weirdenss
@@ -13,7 +14,8 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
 
 #Class - Market Data
   #Data member is an xts object have to format data into this to use
-  setClass("MarketData",
+  
+setClass("MarketData",
       representation(
         Data = "xts"        
         )
@@ -23,7 +25,7 @@ setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
   
   #Test MarketData
   #Load AORD using quantmod package - All Ordinary index
-  
+	AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
   MD1 = MarketData(AORD)
 
 #Class - Market Data Slide

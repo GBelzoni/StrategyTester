@@ -16,10 +16,10 @@ source("PortfolioClasses.R")
   setMethod(
     f="initialize",
     signature="TradeStrategy",
-    definition= function(.Object,MarketData_,Portfolio_){
+    definition= function(.Object,MarketData_,Portfolio_, InitialTimeIndex){
       .Object@MarketData = MarketData_
       .Object@Portfolio = Portfolio_
-      .Object@CurrentTime = 1 #(index(MarketData_@Data)[1])
+      .Object@CurrentTime = InitialTimeIndex #(index(MarketData_@Data)[1])
       Results = data.frame()
       return(.Object)
       }
@@ -28,8 +28,8 @@ source("PortfolioClasses.R")
   
   #need to define generic method before we can define class method
   setGenericVerif(x="TradeStrategy",y  <- function(object){standardGeneric("TradeStrategy")})
-  TradeStrategy  <- function(MarketData_,Portfolio_){
-    new(Class="TradeStrategy",MarketData=MarketData_,Portfolio=Portfolio_)
+  TradeStrategy  <- function(MarketData_,Portfolio_,InitialTimeIndex_=1){
+    new(Class="TradeStrategy",MarketData=MarketData_,Portfolio=Portfolio_,InitialTimeIndex = InitialTimeIndex_)
   }
 
   #Accessors
@@ -152,28 +152,27 @@ source("PortfolioClasses.R")
 			
 setGenericVerif(x="runStrategy",y  <- function(object){standardGeneric("runStrategy")})
 #removeGeneric('updatePortfolio')
-setMethod("runStrategy","TradeStrategy", 
-		function(object){
-			timeInd = TS1@CurrentTime
+removeGeneric('runStrategy')
+#setMethod("runStrategy","TradeStrategy", 
+		#Below is function that loops over time updating Portfolio using the signal from the MA
+runStrategy =		function(object){
+			timeInd = object@CurrentTime
 			maxLoop = length(index(MD@Data))
-			TS1@Results = data.frame( Time = 0,  Value = 0) 
 			
+			#object@Results = data.frame( Time = 0,  Value = 0, Signal = "hold") 
+			object@Results = data.frame(matrix(nrow = (maxLoop-timeInd), ncol =3))
+			colnames(object@Results)=c("Time","Value","Signal")
+			browser()
 			for( i in 1:(maxLoop-timeInd))
 			{
-				TS1 = updatePortfolio(TS1)
-				PS = PortfolioSlice( getPortfolio(TS1),  MD, timeInd)
-				TS1@Results = rbind(TS1@Results , c(as.Date(Dates[timeInd]),sum(Value(PS))))
-				timeInd = TS1@CurrentTime
+				signal = updSig(object)
+				object = updatePortfolio(object)
+				PS = PortfolioSlice( getPortfolio(object),  MD, timeInd)
+				object@Results[i,] = c(object@Results , timeInd,sum(Value(PS)),signal)
+				timeInd = object@CurrentTime
 				
 			}		
 			
 			return(object)
 		}
-)
-
-#Testing
-  
-   
-
-
-  
+#)

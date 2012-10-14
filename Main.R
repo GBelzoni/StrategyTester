@@ -16,7 +16,7 @@ library(PerformanceAnalytics)
 
 AORD = as.xts(as.zoo(read.table("AORD.csv",header=T,sep=",")))
 #Creating EMA using quantmod/Performance Analytics
-chartData = (AORD)#['2008-02::2009-02'])
+chartData = (AORD['2008-02::2008-04'])
 chartSeries(chartData,theme="white")
 EMA1=addEMA(n=10,col=2)
 EMA1Vals=EMA1@TA.values
@@ -42,8 +42,8 @@ Port1=Portfolio("Port1",c(T1,T2)) #Create Portfolio Objects
 #TODO - rewrite classes to get rid of MarketDataSlice. Can include functionality in
 #PortfolioSlice constructor
 time = 1 #Pice time
-MDSlice = MarketDataSlide(MD,1)#Create MarketData time slice.
-PortfolioSlice = PortfolioSlide(Port1,MDSlice) #Create Portfolio slice
+MDSlice = MarketDataSlice(MD,1)#Create MarketData time slice.
+PortfolioSlice = PortfolioSlice(Port1,MD,time) #Create Portfolio slice
 Price(PortfolioSlice) #Query slice for Price
 Value(PortfolioSlice) #Query slice for Value
 #Can add more query methods when necessary - e.g. Delta's, risk reports, etc
@@ -53,9 +53,7 @@ Value(PortfolioSlice) #Query slice for Value
 Cash=c(Trade(Name_="Cash",Type_="Cash",0))
 Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
 #Initialise strategy
-TS1=TradeStrategy(MD,Port_MAtest)
-#Have to move time forward till both MAs have values
-TS1@CurrentTime= TS1@CurrentTime +28
+TS1=TradeStrategy(MD,Port_MAtest,21)
 #Check vals exist
 TS1@MarketData@Data[TS1@CurrentTime,]
 
@@ -91,14 +89,10 @@ init_port = function(){
 	Cash=c(Trade(Name_="Cash",Type_="Cash",0))
 	Port_MAtest = Portfolio(PortfolioName_ = "Port_MAtest",Trades_ = Cash)
 	#Initialise strategy
-	TS1=TradeStrategy(MD,Port_MAtest)
-	#Have to move time forward till both MAs have values
-	TS1@CurrentTime= TS1@CurrentTime +42
-	#Check vals exist
-	TS1@MarketData@Data[TS1@CurrentTime,]
+	TS1=TradeStrategy(MD,Port_MAtest,21)
 	return(TS1)
 }
-
+length(index(MD@Data))
 TS1 = init_port()
 Dates = index(MD@Data)
 timeInd = TS1@CurrentTime
@@ -115,10 +109,14 @@ for( i in 1:(maxLoop-timeInd))
 }
 
 
+TS1 = runStrategy(TS1)
+
+TS1@Results
+
 
 TS1@Portfolio@Trades
-TS1@Results
-plot(TS1@Results[-1,], type ='l')
+
+plot(TS1@Results[-1,1:2], type ='l')
 Res2 = zoo(TS1@Results$Value,order.by=as.Date(TS1@Results$Time))
 plot(Res2[-1,])
 abline(h=0)
