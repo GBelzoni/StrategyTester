@@ -6,26 +6,20 @@
 library(xts)
 library(zoo)
 library(quantmod)
-library(PerformanceAnalytics)
-
-##Redefine setGeneric so that we don't overwrite existing generic functions when
-##defining methods for classe
-setGenericVerif <- function(x,y){if(!isGeneric(x)){setGeneric(x,y)}else{}}
-
 #Class - Market Data
   #Data member is an xts object have to format data into this to use
-  
-setClass("MarketData",
-      representation(
-        Data = "xts"        
-        )
-  )
-  #Methods: GetData, UpdateData, currentDate, subsetData
-  MarketData = function(Data_){new(Class="MarketData",Data=Data_)} #Constructor
-  
+
+MarketData = function(Data)
+{
+  rtrn = list()
+  class(rtrn)="MarketData"
+  rtrn$Data = Data
+  return(rtrn)
+}
+
   #Test MarketData
   #Load AORD using quantmod package - All Ordinary index
-  AORD = as.xts(as.zoo(read.table("../Data/AORD.csv",header=T,sep=",")))
+  AORD = as.xts(as.zoo(read.table("Data/AORD.csv",header=T,sep=",")))
   MD1 = MarketData(AORD)
 
 #Class - Market Data Slide
@@ -37,23 +31,17 @@ setClass("MarketData",
   #Even have MD generate curves object for slide and use Trade params to call this object
   #For now keep it simple
 
-  #Data member is an xts object have to format data into this to use
-  setClass("MarketDataSlice",
-      representation(
-        TimeIndex = "numeric", 
-        TimeClass = "character",
-        Data = "xts"
-        )
-  )
-
-  #Methods: GetData, UpdateData, currentDate, subsetData
-  MarketDataSlice = function(MarketData_, TimeIndex_){
-    new(Class="MarketDataSlice",
-        TimeIndex = TimeIndex_,
-        TimeClass = "Date", #Have to fix to read POSIX date class
-        Data = MarketData_@Data[TimeIndex_]
-        )}
+MarketDataSlice = function(MarketData, TimeIndex)
+{
+  rtrn = list()
+  class(rtrn)="MarketDataSlice"
+  rtrn$TimeIndex = TimeIndex
+  rtrn$TimeClass = class(index(MarketData$Data))
+  rtrn$Data = MarketData$Data[TimeIndex,]
+  return(rtrn)
+}
   
   #Test MarketData
-  MDSlide1 = MarketDataSlice(MD1,1)
+  MDSlice1 = MarketDataSlice(MD1,1)
+
 

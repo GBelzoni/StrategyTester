@@ -1,61 +1,32 @@
 #Trade Strategy classes
-source("PortfolioClasses.R")
+source("R/PortfolioClasses.R")
   #TradeStrategy
   #Data - MDobject, Portfolio, time, PL, PortfolioTS
   #Methods - initialise constructor, updatePort, stepStrat, runStrat 
-  setClass("TradeStrategy",
-             representation(
-               MarketData = "MarketData",
-               Portfolio = "Portfolio",
-               CurrentTime = "numeric", ##Hmm, have to make this adapt for different xts classes
-               Results = "data.frame"
-               )
-    )
-
-  #Constructor Initialise
-  setMethod(
-    f="initialize",
-    signature="TradeStrategy",
-    definition= function(.Object,MarketData_,Portfolio_, InitialTimeIndex){
-      .Object@MarketData = MarketData_
-      .Object@Portfolio = Portfolio_
-      .Object@CurrentTime = InitialTimeIndex #(index(MarketData_@Data)[1])
-      Results = data.frame()
-      return(.Object)
-      }
-    
-    )
-  
-  #need to define generic method before we can define class method
-  setGenericVerif(x="TradeStrategy",y  <- function(object){standardGeneric("TradeStrategy")})
-  TradeStrategy  <- function(MarketData_,Portfolio_,InitialTimeIndex_=1){
-    new(Class="TradeStrategy",MarketData=MarketData_,Portfolio=Portfolio_,InitialTimeIndex = InitialTimeIndex_)
+ TradeStrategy = function(Portfolio,MarketData,InitialTimeIndex){
+    rtrn = list()
+    class(rtrn)="TradeStrategy"
+    rtrn$MarketData = MarketData
+    rtrn$Portfolio = Portfolio
+    rtrn$CurrentTime = InitialTimeIndex
+    rtrn$Results = data.frame()
+    return(rtrn)
   }
 
   #Accessors
-  setGenericVerif(x="getCT",y  <- function(object){standardGeneric("getCT")})
-  setMethod("getCT","TradeStrategy",function(object){return(object@CurrentTime)})
-  setGenericVerif(x="getData",y  <- function(object){standardGeneric("getData")})
-  setMethod("getData","TradeStrategy",function(object){return(object@MarketData@Data)})
-  setGenericVerif(x="getPortfolio",y  <- function(object){standardGeneric("getPortfolio")})
-  setMethod("getPortfolio","TradeStrategy",function(object){return(object@Portfolio)})
-
-
+  #setMethod("getCT","TradeStrategy",function(object){return(object@CurrentTime)})
+  #setMethod("getData","TradeStrategy",function(object){return(object@MarketData@Data)})
+  #setMethod("getPortfolio","TradeStrategy",function(object){return(object@Portfolio)})
 
   #updatePortfolio implementation
   #This function defines trade strategy. 
   #It tells how to update notionals given MD and current portfolio
-  setGenericVerif(x="updSig",y  <- function(object){standardGeneric("updSig")})
   #removeGeneric("updSig")
-  #THis is for MA crossover
-	PS1 = PortfolioSlice(P1,MD1,1)@MarketDataSlice@Data
-	setMethod("updSig","TradeStrategy", 
-           function(object){
-              time = object@CurrentTime
-             
-			  
-			  Data0 = PortfolioSlice( object@Portfolio, object@MarketData,(time-1))@MarketDataSlice@Data
-              Data1 = PortfolioSlice(object@Portfolio,object@MarketData, time)@MarketDataSlice@Data
+  updSig <- function(object,...) UseMethod("updSig") #You have to put this random line in when you first define polymorpic function
+  updSig.TradeStrategy <- function(object){
+              time = object$CurrentTime
+              Data0 = PortfolioSlice(object$MarketData,object$Portfolio,(time-1))$MarketDataSlice$Data
+              Data1 = PortfolioSlice(object$MarketData,object$Portfolio, time)$MarketDataSlice$Data
               #Previous Moving average vals
               MAs0 = Data0[,"MAs"]
               MAl0 = Data0[,"MAl"]
@@ -74,19 +45,17 @@ source("PortfolioClasses.R")
             
               return(signal)
             }
-          )
+          
 
 
   
   #updatePortfolio implementation
   #This function defines trade strategy. It tells how to update notionals TradeStrategy MD
   
-  setGenericVerif(x="updatePortfolio",y  <- function(object){standardGeneric("updatePortfolio")})
-  #removeGeneric('updatePortfolio')
-  setMethod("updatePortfolio","TradeStrategy", 
-		  function(object){
+  updatePortfolio <- function(object,...) UseMethod("updatePortfolio") #You have to put this random line in when you first define polymorpic function
+  updatePortfolio.TradeStrategy = function(object){
                   signal = updSig(object)
-                  tradeNumber = length(getPortfolio(object)@Trades)+1
+                  tradeNumber = length(object$Portfolio$Trades)+1
                   if(signal == "buy"){
                     #CreateBuyTrade
                     # This is a bit of a hack - have to create trade object
@@ -102,14 +71,14 @@ source("PortfolioClasses.R")
                     
                   
                     #Add to portfolio
-                    addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
+                    addPrtString=paste("object$Portfolio = addTrade(object$Portfolio,", tradeName,")",sep="")                  
                     cmdAdd = parse(text=addPrtString)
                     eval(cmdAdd) 
 					
 					#Update Cash for trade
-					MDStmp = MarketDataSlice(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
-					Trades = getPortfolio(object)@Trades
-					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
+					MDStmp = MarketDataSlice(MarketData = MD, TimeIndex = object$CurrentTime ) 
+					Trades = object$Portfolio$Trades
+					object$Portfolio$Trades[[1]]$Notional  = object$Portfolio$Trades[[1]]$Notional - Value(Trades[[length(Trades)]],MDStmp)
 				
 					
 										
@@ -125,13 +94,13 @@ source("PortfolioClasses.R")
                     
                     
                     #Add to portfolio
-                    addPrtString=paste("object@Portfolio = addTrade(object@Portfolio,", tradeName,")",sep="")                  
+                    addPrtString=paste("object$Portfolio = addTrade(object$Portfolio,", tradeName,")",sep="")                  
                     cmdAdd = parse(text=addPrtString);eval(cmdAdd)
                     
 					#Update Cash for trade
-					MDStmp = MarketDataSlice(MarketData_ = MD, TimeIndex_ = object@CurrentTime ) 
-					Trades = getPortfolio(object)@Trades
-					object@Portfolio@Trades[[1]]@Notional  = object@Portfolio@Trades[[1]]@Notional - Value(Trades[[length(Trades)]],MDStmp)
+					MDStmp = MarketDataSlice(MarketData = MD, TimeIndex = object$CurrentTime ) 
+					Trades = object$Portfolio$Trades
+					object$Portfolio$Trades[[1]]$Notional  = object$Portfolio$Trades[[1]]$Notional - Value(Trades[[length(Trades)]],MDStmp)
 					
 					
 					
@@ -139,41 +108,36 @@ source("PortfolioClasses.R")
                     #Do nothing
                   }
               
-                  object@CurrentTime = object@CurrentTime + 1
+                  object$CurrentTime = object$CurrentTime + 1
 				  #Update Cash for any trades
 					
 	
 				  
 				  return(object)
               }
-            )
+            
 
   
-			
-setGenericVerif(x="runStrategy",y  <- function(object){standardGeneric("runStrategy")})
-#removeGeneric('updatePortfolio')
-removeGeneric('runStrategy')
-#setMethod("runStrategy","TradeStrategy", 
-		#Below is function that loops over time updating Portfolio using the signal from the MA
-runStrategy =		function(object){
-			timeInd = object@CurrentTime
-			maxLoop = length(index(MD@Data))
+runStrategy <- function(object,...) UseMethod("runStrategy") #You have to put this random line in when you first define polymorpic function			
+#Below is function that loops over time updating Portfolio using the signal from the MA
+runStrategy.TradeStrategy = function(object){
+			timeInd = object$CurrentTime
+			maxLoop = length(index(object$MarketData$Data))
 			
 			#object@Results = data.frame( Time = 0,  Value = 0, Signal = "hold") 
-			object@Results = data.frame(matrix(nrow = (maxLoop-timeInd), ncol =3))
-			colnames(object@Results)=c("Time","Value","Signal")
-			
+			object$Results = data.frame(matrix(nrow = (maxLoop-timeInd), ncol =3))
+			colnames(object$Results)=c("Time","Value","Signal")
+
 			for( i in 1:(maxLoop-timeInd))
 			{
 				signal = updSig(object)
+				PS = PortfolioSlice(object$MarketData  ,object$Portfolio, timeInd)
+				timeInd = object$CurrentTime
+				time = index(object$MarketData$Data)[timeInd]
+				object$Results[i,] = c(time,sum(Value(PS)),signal)
 				object = updatePortfolio(object)
-				PS = PortfolioSlice( getPortfolio(object),  MD, timeInd)
-				#browser()
-				object@Results[i,] = c(timeInd,sum(Value(PS)),signal)
-				timeInd = object@CurrentTime
-				
-			}		
-			
+			}	
+			object$Results$Time =as.numeric(object$Results$Time)
 			return(object)
 		}
-#)
+

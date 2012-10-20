@@ -1,91 +1,63 @@
 #Need Trade Classes
-source("TradeClasses.R")
+source("R/TradeClasses.R")
 ##Class - Porfolio
   #Data member for portfolio name, and tradenames
-  setClass("Portfolio",
-           representation(
-             PortfolioName = "character",
-             Trades = "list"
-             )
-  )
-  Portfolio = function(PortfolioName_,Trades_){
-    new(Class="Portfolio",
-        PortfolioName = PortfolioName_,
-        Trades=Trades_
-        )}
+  Portfolio = function(Name,Trades){
+    rtrn = list()
+    class(rtrn)="Portfolio"
+    rtrn$Name = Name
+    rtrn$Trades = Trades
+    return(rtrn)
+        }
 
-  setGenericVerif(x="addTrade",y  <- function(object,Trade){standardGeneric("addTrade")})
-  #removeGeneric("Value")
-  setMethod("addTrade","Portfolio", 
-            function(object,Trade){ 
-              object@Trades = c(object@Trades, Trade) #Add Trade to Trade list
-              return(object)
+  #Need an addTrade function
+  addTrade <- function(object,...) UseMethod("addTrade") #You have to put this random line in when you first define polymorpic function
+  addTrade.Portfolio = function(object,Trade)
+  {
+    object$Trades[[length(object$Trades)+1]]=Trade
+    return(object)
   }
-  )
-
+  
   #Test Portfolio Class
+  TradeList = list(T1,T2)    
   P1=Portfolio("P1",TradeList)
-  P1@PortfolioName
-  P1@Trades
+  P1$PortfolioName
+  P1$Trades
   T3 = Trade("T3","Eq",200)
-  P1=addTrade(P1,T3)
+  P1$Trades[[length(P1$Trades)+1]]=T3
   
   
 #Class - PortfolioSlice 
   #Data MarketData, portfolio
   #Member for Price Info, and Value
   #Member for diagnostics - ie greeks
-  setClass("PortfolioSlice",
-           representation(
-             MarketDataSlice = "MarketDataSlice",
-             Portfolio = "Portfolio")
-  )
   
-  #Constructor Initialise
-  setMethod(
-		  f="initialize",
-		  signature="PortfolioSlice",
-		  definition= function(.Object,Portfolio, MarketData,TimeIndex){
-			  .Object@MarketDataSlice = MarketDataSlice(MarketData_ = MarketData,TimeIndex_ = TimeIndex)
-			  .Object@Portfolio = Portfolio
-			  #.Object@CurrentTime = (index(MarketData_@Data)[1])
-			  Results = data.frame()
-			  return(.Object)
-		  }
-  
-  )
-  
-  #Initializer function
-  PortfolioSlice = function(Portfolio_,MarketData_,TimeIndex_){
-      new(Class="PortfolioSlice",
-          Portfolio=Portfolio_,
-          MarketData = MarketData_,
-		  TimeIndex = TimeIndex_
-  )}
+  PortfolioSlice = function(MarketData,Portfolio,TimeIndex){
+    rtrn = list()
+    class(rtrn)="PortfolioSlice"
+    rtrn$MarketDataSlice = MarketDataSlice(MarketData,TimeIndex)
+    rtrn$Portfolio = Portfolio
+    rtrn$TimeIndex = TimeIndex
+    return(rtrn)
+  }
   
   #PricingMethod
-  setGenericVerif(x="Price",y  <- function(object,MarketDataSlice){standardGeneric("Price")})
-  #removeGeneric("Value")
-  setMethod("Price","PortfolioSlice", 
-            function(object,MarketDataSlice){ 
-              PriceVec = numeric(length(object@Portfolio@Trades))
-              PriceVec=sapply(object@Portfolio@Trades,Price, object@MarketDataSlice)
-              names(PriceVec)=sapply(object@Portfolio@Trades,getNames)
+  #Polymorphic! Already defined for trade but am overloading here  
+  Price.PortfolioSlice = function(PortSlice){ 
+              PriceVec = numeric(length(PortSlice$Portfolio$Trades))
+              PriceVec=sapply(PortSlice$Portfolio$Trades,Price,PortSlice$MarketDataSlice)
+              names(PriceVec)=sapply(PortSlice$Portfolio$Trades, function(Trade){return(Trade$Name)})#Adds Names to cols
               return(PriceVec)
   }
-  )
+  
   #ValueMethod
-  setGenericVerif(x="Value",y  <- function(object,PricingData){standardGeneric("Value")})
-
-  setMethod("Value","PortfolioSlice",
-            function(object,MarketDataSlide){
-              Values = sapply(object@Portfolio@Trades, Value, object@MarketDataSlice)             
-              names(Values)=sapply(object@Portfolio@Trades,getNames)
+  Value.PortfolioSlice = function(PortSlice){
+              Values = sapply(PortSlice$Portfolio$Trades, Value, PortSlice$MarketDataSlice)             
+              names(Values)=sapply(PortSlice$Portfolio$Trades,function(Trade){return(Trade$Name)})#Adds Names to cols
               return(Values)}
-  )
+  
 
-#  #Test
-  P1Slice = PortfolioSlice(Portfolio_ = P1,MarketData_ = MD1, TimeIndex_ = 1)
+  #Test
+  P1Slice = PortfolioSlice(MarketData=MD1,Portfolio=P1,1)
   Price(P1Slice)
-  (Value(P1Slice)) 
-
+  Value(P1Slice)
