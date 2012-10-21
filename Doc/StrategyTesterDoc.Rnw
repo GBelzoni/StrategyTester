@@ -5,6 +5,118 @@
 
 \begin{document}
 \maketitle
+<<include=FALSE>>=
+source("~/Documents/R/StrategyTester/R/Main.R")
+@
+
+The best way I can think of to demonstrate how the bits of the Strategy Tester works is to apply it to a simple example. It'll be overkill for this example, but I'll put comments in to explain why some bits might seem a bit overengineered. 
+
+\section{Moving Average Momentum Example}
+
+The basic idea is to take two moving averages of a time series MA1, MA2 where MA1 had less lags than MA2. We think of MA2 as being a more long term average than MA1, and so when MA1 crosses MA2 there is momentum away from the longterm average, and we trade in that direction. 
+
+The code in the "Main.R" file runs through this for the AORD index from Yahoo finance using StrategyTester. Figure XX below has final results, and I'll go through "Main.R" code step by step in following sections.
+
+\begin{figure}\label{fig:OutPutMA}
+\center
+<<figure1,echo=FALSE,fig.height=3>>=
+plot.zoo(ResZoo[-1,2:4],ylim=c(4500,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
+axis(side=1,at=marks,labels=labs)
+abline(v=TD,col="red")
+plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
+abline(v=TD,col="red")  
+abline(h=0,col="black")
+axis(side=1,at=marks,labels=labs)
+@
+\caption{Output Plots}
+\end{figure}
+In the top panel of figure \cite{fig:OutPutMA}, the blue line is MA with more lags and hence, and the green line is the MA with less lags. We want the StrategyTester to put on trades when there is a crossover: upcross and we put on a buy; downcross we put on a sell; otherwise we hold.
+
+The second panel tracks the Value of the portfolio. I have assume zero interest rates, i.e. price of cash = 1. Can easily change by putting in price of cash increasing at cash rate.
+
+\subsection{Data Import}
+The first portion of code doesn't have much to do with the StrategyTester files. It just uses R and quantmod to load in data and construct the moving averages.
+
+First we load the libraries we need
+<<libraries,results='hide'>>=
+library(xts)
+library(zoo)
+library(quantmod)
+@
+Then we set the working directory so that it will include the StrategyTester class files correctly, 
+<<setwd>>=
+setwd("~/Documents/R/StrategyTester")
+@
+
+Next we import data. 
+<<dataImport>>=
+AORD = as.xts(as.zoo(read.table("../Data/AORD.csv",header=T,sep=",")))
+@
+The csv loaded here was one I prepared ealier using quantmod's canned functions for downloading yahoo data. 
+
+We then use quantmod to create the moving averages. It has some nice functions which add all different kinds of technical indicators (TA's) to charts. 
+\begin{figure}
+<<quantmodChart,fig.height=3.5,fig.keep='last'>>=
+chartData = AORD['2008-02::2008-08']
+chartSeries(chartData,TA=NULL, theme="white")
+addEMA(n=10,col="green") #Adding Moving Average to chart
+addEMA(n=20,col="blue") #Adding Moving Average to chart
+@
+\caption{quantmod Charts with EMA's}
+\end{figure}
+We then extract the EMA values via
+<<createEMA, results='hide'>>=
+EMA1=addEMA(n=10,col=2)
+EMA1Vals=EMA1@TA.values
+EMA2=addEMA(n=20)
+EMA2Vals=EMA2@TA.values
+@
+and combine them into the data object, \textbf{chartData} we will use for StrategyTester
+<<stratData>>=
+Series1 = as.xts(zoo(EMA1Vals,order.by=index(chartData)));colnames(Series1)="MAs"
+Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData)));colnames(Series2)="MAl"
+chartData = cbind.xts(chartData,Series1,Series2 )
+head(chartData,2)
+@
+Note that the beginning MA values don't exist as the first value in the series can only be caculated when there are enough lags evailable, e.g. MAs will only begin after 10 periods, as it has 10 lags.
+
+\subsection{Market Data, Trade and Portfolio Classes}
+
+Following other finance libraries, I have broken down the parts of the trading algorithm into the following logical pieces, which are implemented as classes:
+\begin{itemize}
+\item Market Data. This contains data inputs, and interface to other classes.
+\item Trades. These objects contain info about trades that is not dynamic market data. Notionals, TradeType. Also need functions to Price, Value given market data.
+\item Portfolios. This just collections of trades.
+\end{itemize}
+There's a couple of other classes I've added whose purpose I'll describe as we go.
+
+Continuing with "Main.R" code, let's look at how to build objects of these classes and what they do.
+<<marketData>>=
+MD = MarketData(chartData) #Create Market Data
+@
+This is just a class that contains our market data. It is a bit redundant as all our code is in R, but will provide the bridge when we implement in other languages. I.e. we'll construct data in R becuase it's easy, then we can the MarketData class to convert to form usable by C++/Python internal code we devlelop.
+
+Next we build some trade objects of the Trade class I've defined.
+<<>>=
+T1 = Trade(Name="Cash",Type="Cash",Notional=100) #Create Trade Objects
+T2 = Trade(Name="AORD",Type="Eq",Notional=100)
+@
+So far I've only defined simple "Cash" and "Eq" types, and forgotten to include an argument for trade date info. 
+\begin{itemize}
+\item "Cash" always has price = 1
+\item "Eq" has takes price from close of MarketData object.  
+\end{itemize}
+
+
+
+
+
+
+
+
+
+\section{Thoughts}
+
 We want to develop some system that can handle all types of strategies and all types of data. Following other finance models I think good basic classes for all later projects would be:
 \begin{itemize}
 
@@ -63,6 +175,6 @@ This is what OO is all about - breaking programmes into logical chunks and only 
 
 Also a big advantage of moving to OO is you can put in error checking easily - ie you can say what each object needs to work, ie swaptrade objects would need swapcurve objects to values so when you combine into portfolioSlice you could have a check that tells you if you have the right pieces for everything to function. A step we put in the production building stage rather than protyping I think.
 
-Anyway, I've done the above for an example using Moving average crossovers on AORD^ index from yahoo finance.
+Anyway, I've done the above for an example using Moving average crossovers on AORD index from yahoo finance.
 
 \end{document}
