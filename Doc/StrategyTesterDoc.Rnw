@@ -107,236 +107,281 @@ Following other finance libraries, like quantlib, I have broken down pricing tra
 \end{itemize}
 There's a couple of other classes I've added whose purpose I'll describe as we go.
 
-We load the code that defines the classes
-<<ldPortfolio, results='hide',warning=FALSE, error=FALSE>>=
+Continuing with \textit{Main.R} we load the code that defines the classes
+<<ldPortfolio, results='hide',warning=FALSE, error=FALSE,cache=TRUE>>=
 source('R/PortfolioClasses.R')
 @
-
-Make sure working directory is set correctly or won't load.
-
-Continuing with "Main.R" code, let's look at how to build objects of these classes and what they do. We build an object \textbf{MD} of the \textbf{MarketData} class,
-<<marketData>>=
+\begin{remark}
+  \begin{itemize}
+    \item Note, I have setup so that loading this files loads other classe files it needs.
+    \item Make sure working directory is set correctly or won't load.
+  \end{itemize}
+\end{remark}
+\noindent Now let's look at how to build objects of these classes and what they do. We build an object \textbf{MD} of the \textbf{MarketData} class,
+<<marketData,cache=TRUE>>=
 MD = MarketData(chartData) #Create Market Data
 @
-This is just a class that contains our market data. It is a bit redundant as all our code is in R, but will provide the bridge when we implement in other languages. I.e. we'll construct data in R becuase it's easy, then we can the MarketData class to convert to form usable by C++/Python internal code we devlelop.
+\noindent This is just a class that contains our market data. It is a bit redundant as all our code is in R, but will provide the bridge when we implement in other languages. I.e. we'll construct data in R becuase it's easy, then we can the MarketData class to convert to form usable by C++/Python internal code we devlelop.
 
 Next we build \textbf{T1}, \textbf{T2} objects of the Trade class I've defined.
-<<TradeCreation>>=
+<<TradeCreation,cache=TRUE>>=
 T1 = Trade(Name="Cash",Type="Cash",Notional=100)
 T2 = Trade(Name="AORD",Type="Eq",Notional=100)
 @
-So far I've only defined simple "Cash" and "Eq" types, and forgotten to include an argument for trade date info. 
+\noindent So far I've only defined simple "Cash" and "Eq" types, and forgotten to include an argument for trade date info. 
+
 \begin{itemize}
 \item "Cash" always has price = 1
 \item "Eq" has takes price from 'Close' of a MarketData object.  
 \end{itemize}
+
 In the future we can make more complicated trade types like: futures, swaps, options, etc. These will have a lot more parameters, and much more complicated pricing formulas. 
 
 \begin{remark} Pretty much all of the high tech pricing libraries, like quantlib, fit in here. This is a good example of how OO seperates logical parts. If we want to swap in a different pricing library, then it will be only at this point that we need to redesign the interface.
 \end{remark}
 
 Now to Price/Value trades, we need to do it against a time slice of market data. For this reason I created the \textbf{MarketDataSlice} class, which is combined with Trade objects to value and price.
-<<TradeValue>>=
+<<TradeValue,cache=TRUE>>=
 MDSlice = MarketDataSlice(MarketData=MD,TimeIndex=1)#Create MarketData time slice
 Value(T1,MDSlice)
 Value(T2,MDSlice)
 @
-\begin{itemize}
-\item Value of $T1 = 100$ as it was constructed with $Notional = 100$ it is of type "cash" and so always has price = 1.
-\item Value of $T2 = 5882.3$ as it was constructed with $Notional = 100$ it is of type "Eq" and so price = Close of the AORD index for time index 1 = 5882.3, which we can see if we look a few chunks of code back when we constructed the data (Let's just not worry about whether AORD index is a price or not).
-\end{itemize}
+% \begin{itemize}
+% \item Value of $T1 = 100$ as it was constructed with $Notional = 100$ it is of type "cash" and so always has price = 1.
+% \item Value of $T2 = 588230$ as it was constructed with $Notional = 100$ it is of type "Eq" and so price = Close of the AORD index for time index 1 = 5882.3, which we can see if we look a few chunks of code back when we constructed the data (Let's just not worry about whether AORD index is a price or not).
+% \end{itemize}
 
 Again, having a whole class just to slice the MarketData objects is a bit over the top for this simple example, but for more complicated examples, we may need to use the market data to create complicated objects with which to price, which we might want to defer till we actually want to compute a price. 
 
-For example, with swaps, the MarketData object will contain timeseries of all the swap rates etc. To price we'll need to create curve objects. IF we have a large timeseries, then if we created a curve for each time point in the market data we might blow up the memory (stackoverflow!). However, if we leave curve construction to the MarketDataSlice class, then we can run algo's over timesteps and chuck out each curve when we go to the next step in the algo loop.
+For example, with swaps, the MarketData object will contain timeseries of all the swap rates etc. To price we'll need to create curve objects. If we have a large timeseries, then if we created a curve for each time point in the market data we might blow up the memory (stackoverflow!). However, if we leave curve construction to the MarketDataSlice class, then we can run algo's over timesteps and chuck out each curve when we go to the next step in the algo loop.
 
 The above code chunk demonstrates how the \textbf{MarketData} and \text{Trade} objects interact. We can then combine trades into a \textbf{Portfolio} object.
-<<portfolioEg>>=
+<<portfolioEg,cache=TRUE>>=
 TradeList = list(T1,T2)
 Port1=Portfolio(Name="Port1",Trades=TradeList)
 print(Port1) #Overloaded print for Porfolio
 @
-Note in the above
+\noindent Note in the above
 \begin{itemize}
-\item I've put the trades into a R list object. They way I've defined the Porfolio contructor, you have to do this, even for only a single Trade object. In robust production level code you would have type checking that would throw an error if this wasn't the case. In C++, the code won't even compile if data types don't match.
-\item I've overloaded 'print' for the portfolio class, to give a nice summary table. Should probably have a 'TradeData' field.
+\item I've put the trades into a R list object. They way I've defined the Porfolio contructor, you have to do this, even for only a single Trade object. In robust production level code you would have type checking when constructing objects that would throw an error when wrong data types are given to constructor. In C++, the code won't even compile if data types don't match.
+\item I've overloaded 'print' for the portfolio class, to give a nice summary table. Should probably have a 'TradeDate' field.
 \end{itemize}
 Then similar to creating a MarketDataSlice and valuing a trade, we make a \textbf{PortfolioSlice} object and define functions \textbf{Price, Value} that apply to it.
-<<portfolioSlice>>=
+<<portfolioSlice,cache=TRUE>>=
 time = 1 #Pice time
 PortfolioSlice = PortfolioSlice(MD,Port1,time) #Create Portfolio slice
 Price(PortfolioSlice) #Query slice for Price
 Value(PortfolioSlice) #Query slice for Value
 @
-Note I have slightly different interface for valuing Portfolio's and Trades. Have to think a bit about this in a final version.
+\noindent I have slightly different interface for valuing Portfolio's and Trades. Have to think a bit about this in a final version.
 
 \subsection{TradeStrategy Classes and Running Strategy}
-So far we haven't defined anything that will actually run our strategy. The above classes are not specialised to running strategies and can be used for other tasks, such as evaluating risk profiles for hedging, etc. This is what you want from OO. Reusability of code for logical chunks in different contexts.
+The above section discusses the objects the TradeStrategy class will use, but so far we haven't actually defined anything that will actually run our strategy. The above classes are not specialised to running strategies and can be used for other tasks, such as evaluating risk profiles for hedging, etc. This is what you want from OO. Reusability of code for logical chunks in different contexts.
 
-To implement strategy we define load the the TradeStrategy classes.
+To implement strategy we load the the TradeStrategy classes.
 <<ldTradeStrategy, results='hide',warning=FALSE, error=FALSE>>=
 source('R/TradeStrategyClasses.R')
 @
-
-
-This file implements a class \textbf{TradeStrategy}, which is described as follows.
+\noindent This file implements a class \textbf{TradeStrategy} with properties:
 \begin{itemize}
 \item You construct \textbf{TS}, a \textbf{TradeStrategy} object, from a MarketData object, an initial portfolio Portfolio object, and an initial time.
 \item There is a class (aka member) function "updSig" which looks at the data and Portfolio at a given time step and generates a trade signal for the period. \textbf{This function defines the trade strategy}. E.g. for MA momentum, you buy or sell depending on if there was a crossover at that point in time.
 \item There is an "updPortfolio" class function that adds trades to the portfolio depending on what the "updSig" function says. For MA momentum this is adding a buy/sell trade of a given notional at that date. For a delta hedging strategy it would be adding trades so that delta of portfolio = 0.
 \item There is a "runStrategy" class function, which loops the "updPortfolio" function of the MarketData object and collects the results.
-\item There is a "Results" data member.
+\item There is a "Results" data member for recording output.
 \end{itemize}
-This is demonstrated in "Main.R".
-Initialise an empty portfolio with an initial cash trade of Notional =0.
-<<inTradePort>>=
+Continuing with "Main.R", we see how the above class is used. 
+
+We initialise an empty portfolio with an initial cash trade of Notional = 0.
+<<inTradePort,cache=TRUE>>=
 Cash=Trade(Name="Cash",Type="Cash",0)
 Port_MAtest = Portfolio("Port_MAtest",list(Cash))
 @
-Initialise TradeStrategy object, $TS1$, with market data object $MD$ as above, and with initial time=21 such that both the MA series exist. 
-<<inTradeStrategy>>=
+\noindent Initialise TradeStrategy object, \textbf{TS1}, with market data object \textbf{MD} as above, and set the initial time=21 such that there are enough lags for both the MA series exist. 
+<<inTradeStrategy,cache=TRUE>>=
 TS1=TradeStrategy(Port_MAtest,MD,21)
 Time=TS1$CurrentTime
 #Check MA series exist
 TS1$MarketData$Data[(Time-1):Time,c(4,7,8)]
 @
-I've picked an initial time so that there is a crossover right at the start. We can check this by running the "updSig" class function
-<<updSig>>=
+\noindent I've also picked an initial time so that there is a crossover right at the start. We can check this by running the "updSig" class function on our created \textbf{TS1} TradeStrategy object.
+<<updSig,cache=TRUE>>=
 updSig(TS1)
 @
-Now we check if $TS1$ updates itself for the "sell" signal
-<<chkUpd>>=
-print(TS1$Portfolio) #only cash in Portfolio
+\noindent Now we check if \textbf{TS1} updates itself for the "sell" signal.
+<<chkUpd,cache=TRUE>>=
+print(TS1$Portfolio) #Initial state: only cash in Portfolio
 TS1$CurrentTime #Current time index
 @
-Run update and we should see a trade
-<<mrUpd>>=
+\noindent Run update and we should see a "sell" trade has occured
+<<mrUpd,cache=TRUE>>=
 TS1=updatePortfolio(TS1) #Run portfolio update
 print(TS1$Portfolio) 
 TS1$CurrentTime #Current time index has been advanced
 @
-And we see that a new trade with with Notional = -100 has beeb added, ie a "sell", and that we take the value at of the 100 Notional we sold and add it to the cash Notional.
+\noindent and we see that a new trade with with Notional = -100 has been added, ie a "sell", and that we've added the value of the 100 Notional of AORD to the cash Notional.
 
-Total Value of the portfolio is still = 0, but when the "price" of AORD changes, and price of Cash staying constant =1, we will get PL for the portfolio. 
+After the trade the total Value of the portfolio hasn't changed ( = 0), but when the "price" of AORD changes, with the price of Cash staying constant (=1), we will get PL for the portfolio. 
 
-So now let's run the strategy over all the time periods
-<<rnStrat>>=
-TS1=TradeStrategy(Port_MAtest,MD,21)
-TS1 = runStrategy(TS1)
+So we see how \textbf{TS1} updates itself for one period. Now we can loop this proces over all the time periods and collect the results to see how the MA strategy performs. This is implemented with \textbf{runStrategy} class member.
+<<rnStrat,cache=TRUE>>=
+TS1=TradeStrategy(Port_MAtest,MD,21) #Re-initialise back to start time
+TS1 = runStrategy(TS1) #Run the strategy and collect results
 @
-which I've collected into a "Results" data member of the TS1 object.
-<<Reslts>>=
+\noindent The results get collected into a "Results" data member of the TS1 object.
+<<Reslts,cache=TRUE>>=
 head(TS1$Results,5)
 @
+\begin{remark}
+Note that to run our strategy after creation of \textbf{MD} data object all we did was run the following four lines of code:
+<<RunStrat , results='hide',cache=TRUE>>=
+#Create Empty Portfolio
+Cash=Trade(Name="Cash",Type="Cash",0) 
+Port_MAtest = Portfolio("Port_MAtest",list(Cash))
+#Initialise Strategy
+TS1=TradeStrategy(Port_MAtest,MD,21)
+#Run Strategy
+TS1 = runStrategy(TS1)
+@
+\noindent Then we can look at the reults.
+
+The implementation details of the strategy are in the definitions of the functions "updSig" and "updPortfolio" in the StrategyTester class. If we want to add a strategy, we just add a new type of StrategyTester class by modifying the functions "updSig" and "updPortfolio" and run the same way.
+
+If we had Strategy not implemented as OO, there's a good chance that code for the data import, strategy running, results analysis would get tangled up, and could be very confusing to add new strategies.
+\end{remark}
+
 \subsection{Plotting Results}
 The last bit of code is just displaying results. Just looks up results for timeseries of Value of portfolio and for when trades occour and does plots.
-<<Get tradeDates>>=
+<<Get tradeDates,cache=TRUE>>=
 #Find where Trade Events occured
 TradeEvents = which(TS1$Results[,"Signal"] != "hold") #What indexes were trades at
 TD = as.Date(TS1$Results$Time)[TradeEvents] #Convert to date stamp
 TradeDate = index(TS1$MarketData$Data)[TradeEvents]
 TradeSigs= TS1$Results[TradeEvents,"Signal"] #Get TradeSigs
 @
-Merge Portfolio Value ts with price for plotting
-<<resD>>=
+\noindent merge Portfolio Value ts with price for plotting
+<<resD,cache=TRUE>>=
 ResZoo = zoo(TS1$Results$Value,order.by=as.Date(TS1$Results$Time))
 ResZoo = merge(ResZoo,chartData)
 @
-Caculate where to draw trade lines, and format labeling of charts
-<<trdLable>>=
+\noindent Caculate where to draw trade lines, and format labeling of charts
+<<trdLable,cache=TRUE>>=
 TradeDatesZooPlot = domain[which(domain%in%TradeDate)]
 numberTix = 20
 spacing=floor(length(domain)/numberTix)
 marks = domain[seq(1,length(domain),spacing)]
 labs= format(marks,"%d%b%y")
 @
-Do the results plots
-\begin{figure}
-\center
-<<rsltplt,fig.keep='last'>>=
-split.screen(figs = c(2,1))
-screen(1)
-plot.zoo(ResZoo[-1,c(4,7,8)],ylim=c(4500,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
-axis(side=1,at=marks,labels=labs)
-abline(v=TD,col="red")  
-screen(2)
-plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
-abline(v=TD,col="red")	
-abline(h=0,col="black")
-axis(side=1,at=marks,labels=labs)
-@
+\noindent Plot results in Figure~\ref{fig:Results} below (wherever LaTex ends up putting it)
+<<rsltplt1,fig.keep='none',cache=TRUE, warning=FALSE>>=
+  x11() #Open Graphic device on Linux
+  split.screen(figs = c(2,1))
+  screen(1)
+  plot.zoo(ResZoo[-1,c(5,8,9)],ylim=c(4500,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
+  axis(side=1,at=marks,labels=labs)
+  abline(v=TD,col="red")  
+  screen(2)
+  plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
+  abline(v=TD,col="red")  
+  abline(h=0,col="black")
+  axis(side=1,at=marks,labels=labs)
+  @
+\begin{figure}\label{fig:Results}
+  \center
+  <<rsltplt2,fig.keep='last',echo=FALSE,cache=TRUE>>=
+  split.screen(figs = c(2,1))
+  screen(1)
+  plot.zoo(ResZoo[-1,c(5,8,9)],ylim=c(4500,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
+  axis(side=1,at=marks,labels=labs)
+  abline(v=TD,col="red")  
+  screen(2)
+  plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
+  abline(v=TD,col="red")	
+  abline(h=0,col="black")
+  axis(side=1,at=marks,labels=labs)
+  @
+  \caption{Top:AORD Timeseries and MA's, Bottom: Portfolio Values}
 \end{figure}
 
 
 
-
-
-
-
-
-
-
-
-\section{Thoughts}
-
-We want to develop some system that can handle all types of strategies and all types of data. Following other finance models I think good basic classes for all later projects would be:
+\section{Thoughts and Directions}
+Under construction. Some first thoughts:
 \begin{itemize}
-
-\item Trade Class. Data will all be non-market,e.g. 
-
-  \begin{itemize}
-  
-    \item trade date, trade type notional, bond:coupon, payment frequ, swap: strike, coupfreq. info on what market data type it needs to value. 
-    \item Class functions (members) would be get trade info, price trade(market data input), value trade, calc appropriate greeks for trade type etc
-  
-  \end{itemize}
-  
-  \item Market Data Class.
-  
+  \item Does this look good to you as basic structure?
+  \item Add realism. Bid/Offer, interest rates.
+  \item Should be able add MA mean reversion strategy very easily
+  \item Think doing an alpha PCA curve reversion would be pretty easy to do with RQuantlib package. Realistic would be harder on data front, as would need to include collateral data.
+  \item Redo in Python.
+  \item More post analysis of results. Add standard drawdown, Sharpe ratio calcs, etc. Can then compare easily across strats.
+  \item What directions do we want to take this?
     \begin{itemize}
-    
-      \item Data: raw loaded from bbg/reuters/etc, e.g. bondyields, swaprates, fx, etc
-      \item DerivedData: swap curves, bond curves, (think we use class inheritence for this e.g have inherited "swap market data", "bond market data" inherited classes)
-      \item TechnicalData: Stuff we might need for strats, ie moving averages, kalman filters, momentum trackers, etc - again might want to use inheritance
-      \item Class Members: load data from source to MD object, create derived MD like swap/bond curves, generate technical data from raw
+      \item Something to research if/where differenct trade strategies are effective
+      \item Suggest medium term trade strats? 
+      \item Suggest intraday trading - looking at tick data?
+      \item Use for automated trading?
     \end{itemize}
-
+  \item Not that we have to nail down, kinda cool creating and seeing what happens, but being on same page with a few big picture goals will keep momentum going.
 \end{itemize}
-
-We can then add some more simple classes to combine the above basic classes to produce useful info:
-\begin{itemize}
-  \item Portfolio
-    \begin{itemize}
-      \item Data: list of trades in portfolio
-      \item Members: aggregate info function, e.g. portfolio val, greeks, trade history profile etc
-    \end{itemize}
-  \item PortfolioSlice - combining Portfolio and MD object at given time value to give all info at that time
-    \item Data: portfolio object, market data object, timeValue
-    \item Members: functions that apply Portfolio/Trade value functions to MarketData object at given time slice to produce Value, greeks, at that time.
-\end{itemize}
-
-So far our classes are pretty generic and versatile - can use outside strategy testing. For strategy testing we define one more class
-
-
-\begin{itemize}
-  \item Strategy Tester
-    \begin{itemize}
-      \item Data: MarketData and Portfolio objects, stratResults
-      \item Members: signalGenerator - this would generate signal to trade given MD and Portfolio object at each given instant in tiem. E.g momentum tell to buy/sell, mean reversion when to fade, delta hedging how much to hedge 
-      \item Member: updatePortfolio - this would update portfolio given signal
-      \item Member: run strategy - loop through time applying signaGenerator and update Portfolio to run strategy.
-      \item Member: Results/Diagnostics, use stratResults to gen info, ie PL, sharpeRatios, TradeProfiles, etc
-    \end{itemize}
-\end{itemize}
-
-If we were just looking at one strategy type then the above would be overkill, you could just write a standalone script. 
-
-But if we start wanting to look at comparing a bunch of different strategies then we're going to writing a lot of standalone scripts with very similar operatios, loading data, valuing trades, looking at PL and sharpe ratios. 
-
-This is what OO is all about - breaking programmes into logical chunks and only specialisng the bits we need to. For strategy testing I think it's the signal generating function. When you work out what this will require the rest of the bits should be easy.
-
-Also a big advantage of moving to OO is you can put in error checking easily - ie you can say what each object needs to work, ie swaptrade objects would need swapcurve objects to values so when you combine into portfolioSlice you could have a check that tells you if you have the right pieces for everything to function. A step we put in the production building stage rather than protyping I think.
-
-Anyway, I've done the above for an example using Moving average crossovers on AORD index from yahoo finance.
+% 
+% We want to develop some system that can handle all types of strategies and all types of data. Following other finance models I think good basic classes for all later projects would be:
+% \begin{itemize}
+% 
+% \item Trade Class. Data will all be non-market,e.g. 
+% 
+%   \begin{itemize}
+%   
+%     \item trade date, trade type notional, bond:coupon, payment frequ, swap: strike, coupfreq. info on what market data type it needs to value. 
+%     \item Class functions (members) would be get trade info, price trade(market data input), value trade, calc appropriate greeks for trade type etc
+%   
+%   \end{itemize}
+%   
+%   \item Market Data Class.
+%   
+%     \begin{itemize}
+%     
+%       \item Data: raw loaded from bbg/reuters/etc, e.g. bondyields, swaprates, fx, etc
+%       \item DerivedData: swap curves, bond curves, (think we use class inheritence for this e.g have inherited "swap market data", "bond market data" inherited classes)
+%       \item TechnicalData: Stuff we might need for strats, ie moving averages, kalman filters, momentum trackers, etc - again might want to use inheritance
+%       \item Class Members: load data from source to MD object, create derived MD like swap/bond curves, generate technical data from raw
+%     \end{itemize}
+% 
+% \end{itemize}
+% 
+% We can then add some more simple classes to combine the above basic classes to produce useful info:
+% \begin{itemize}
+%   \item Portfolio
+%     \begin{itemize}
+%       \item Data: list of trades in portfolio
+%       \item Members: aggregate info function, e.g. portfolio val, greeks, trade history profile etc
+%     \end{itemize}
+%   \item PortfolioSlice - combining Portfolio and MD object at given time value to give all info at that time
+%     \item Data: portfolio object, market data object, timeValue
+%     \item Members: functions that apply Portfolio/Trade value functions to MarketData object at given time slice to produce Value, greeks, at that time.
+% \end{itemize}
+% 
+% So far our classes are pretty generic and versatile - can use outside strategy testing. For strategy testing we define one more class
+% 
+% 
+% \begin{itemize}
+%   \item Strategy Tester
+%     \begin{itemize}
+%       \item Data: MarketData and Portfolio objects, stratResults
+%       \item Members: signalGenerator - this would generate signal to trade given MD and Portfolio object at each given instant in tiem. E.g momentum tell to buy/sell, mean reversion when to fade, delta hedging how much to hedge 
+%       \item Member: updatePortfolio - this would update portfolio given signal
+%       \item Member: run strategy - loop through time applying signaGenerator and update Portfolio to run strategy.
+%       \item Member: Results/Diagnostics, use stratResults to gen info, ie PL, sharpeRatios, TradeProfiles, etc
+%     \end{itemize}
+% \end{itemize}
+% 
+% If we were just looking at one strategy type then the above would be overkill, you could just write a standalone script. 
+% 
+% But if we start wanting to look at comparing a bunch of different strategies then we're going to writing a lot of standalone scripts with very similar operatios, loading data, valuing trades, looking at PL and sharpe ratios. 
+% 
+% This is what OO is all about - breaking programmes into logical chunks and only specialisng the bits we need to. For strategy testing I think it's the signal generating function. When you work out what this will require the rest of the bits should be easy.
+% 
+% Also a big advantage of moving to OO is you can put in error checking easily - ie you can say what each object needs to work, ie swaptrade objects would need swapcurve objects to values so when you combine into portfolioSlice you could have a check that tells you if you have the right pieces for everything to function. A step we put in the production building stage rather than protyping I think.
+% 
+% Anyway, I've done the above for an example using Moving average crossovers on AORD index from yahoo finance.
 
 \end{document}

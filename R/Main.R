@@ -120,12 +120,13 @@ numberTix = 20
 spacing=floor(length(domain)/numberTix)
 marks = domain[seq(1,length(domain),spacing)]
 labs= format(marks,"%d%b%y")
-
+ResZoo[20:22,c(5,8,9)]
+colnames(ResZoo)
 #x11() #opens graphics device on linux
 #Plot 
 split.screen(figs = c(2,1))
 screen(1)
-plot.zoo(ResZoo[-1,c(4,7,8)],ylim=c(3000,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
+plot.zoo(ResZoo[-1,c(5,8,9)],ylim=c(3000,6200),screens=c(1,1,1),col=c("black","green","blue"),xaxt='n',xlab="Date",ylab="Price And TA")
 axis(side=1,at=marks,labels=labs)
 abline(v=TD,col="red")	
 screen(2)
