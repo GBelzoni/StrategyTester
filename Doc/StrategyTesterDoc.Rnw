@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{amsmath, amssymb}
+\usepackage{fullpage}
 \newtheorem{remark}{Remark}
 \title{Strategy Tester}
 \author{Patrick Costello and Matt Johnson}
@@ -12,70 +13,83 @@ opts_knit$set(root.dir = "~/Documents/R/StrategyTester")
 source("~/Documents/R/StrategyTester/R/Main.R")
 @
 
-The best way I can think of to demonstrate how the bits of the Strategy Tester works is to apply it to a simple example. It'll be overkill for this example, but I'll put comments in to explain why some bits might seem a bit overengineered. 
+I'll demonstrate how the parts of the Strategy Tester works by apply it to a simple Moving Average momentum example. The code's a bit of overkill for this example, but I'll put comments in to explain the reason for the design along the way. At the end I'll talk about how structure should generalise to more complex examples like strategies on curves.
+
+The R code is broken into a few files:
+\begin{itemize}
+\item \textit{Main.R} executes our strategy. It imports data, constructs required object, and displays results. However, it doesn't have function definitions, it's just a list of commands we want to execute.
+\item \textit{MarketDataClasses.R, TradeClasses.R, PortfolioClasses.R, TradeStrategyClasses.R} have code that defines the different object we want to create, i.e. classes, and things we want to do to them, i.e. class functions (aka member functions). These files don't execute commands, except for a couple to check the classes are working properly. They just define objects and how they interact.
+\end{itemize}
+In the example below I'll just go through the execution of \textit{Main.R} to show how I see the logical parts fitting together. 
+
+If you want we can go through class definitions later, but seeing as though we are probably going to do coding in futuer in Python/C++ then probably not worth spending too much time on R implementation as R OO is a bit weird.
+
+I've broken the discussion into a few sections, corresponding a quick description of the MA strategy and then logical sections of the \textit{Main.R} code. The fist part of \textit{Main.R} basically just imports data for the AllOrds index, adds MA's and formats in a way that can be used by the StrategyTester classes. The second part gives a description of how to build Trade objects and combine them into Portfolio objects, then price/value them against the data, with comments on resoning behind definitions. Part 3 describes creating a TradeStrategy object from a MarketData and a Portfolio object, and then operations you can do on the TradeStrategy object like run the strategy and look at the results - this is the main section for generating strategy results, which is done in only a few lines. Part 4 is just goes through the chunk of code to display the results. The last part is discussion of further things we can do.
+
+
 
 \section{Moving Average Momentum Example}
 
-The basic idea is to take two moving averages of a time series MA1, MA2 where MA1 had less lags than MA2. We think of MA2 as being a more long term average than MA1, and so when MA1 crosses MA2 there is momentum away from the longterm average, and we trade in that direction. 
-
-The code in the "Main.R" file runs through this for the AORD index from Yahoo finance using StrategyTester. Figure XX below has final results, and I'll go through "Main.R" code step by step in following sections.
+The basic idea, illustrated in Figure~\ref{fig:OutPutMA} below, is to take two moving averages of a time series MA1, MA2 where MA1 had less lags than MA2. We think of MA2 as being a more long term average than MA1, and so when MA1 crosses MA2 there is momentum away from the longterm average, and we trade in that direction. I.e. trade when lines cross in the direction of green line crossing blue line: upcross and we put on a buy; downcross we put on a sell; otherwise we hold. Sounds a bit too simple to work - we can test results with StategyTester.
 
 \begin{figure}\label{fig:OutPutMA}
 \center
-<<figure1,echo=FALSE,fig.height=3>>=
-plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
-abline(v=TD,col="red")  
-abline(h=0,col="black")
-axis(side=1,at=marks,labels=labs)
-@
-\caption{Output Plots}
-\end{figure}
-
-
-
-In the top panel of figure \ref{fig:OutPutMA}, the blue line is MA with more lags and hence, and the green line is the MA with less lags. We want the StrategyTester to put on trades when there is a crossover: upcross and we put on a buy; downcross we put on a sell; otherwise we hold.
-
-The second panel tracks the Value of the portfolio. I have assume zero interest rates, i.e. price of cash = 1. Can easily change by putting in price of cash increasing at cash rate.
-
-\subsection{Data Import}
-The first portion of code doesn't have much to do with the StrategyTester files. It just uses R and quantmod to load in data and construct the moving averages.
-
-First we load the libraries we need
-<<libraries,results='hide'>>=
-library(xts)
-library(zoo)
-library(quantmod)
-@
-Then we set the working directory so that it will include the StrategyTester class files correctly, 
-<<setwd>>=
-setwd("~/Documents/R/StrategyTester")
-@
-
-Next we import data. 
-<<dataImport>>=
-AORD = as.xts(as.zoo(read.table("Data/AORD.csv",header=T,sep=",")))
-@
-The csv loaded here was one I prepared ealier using quantmod's canned functions for downloading yahoo data. 
-
-We then use quantmod to create the moving averages. It has some nice functions which add all different kinds of technical indicators (TA's) to charts. 
-\begin{figure}
-<<quantmodChart,fig.height=3.5,fig.keep='last'>>=
+<<figure1,echo=FALSE,fig.height=4,fig.keep='last',cache=TRUE>>=
 chartData = AORD['2008-02::2008-08']
 chartSeries(chartData,TA=NULL, theme="white")
 addEMA(n=10,col="green") #Adding Moving Average to chart
 addEMA(n=20,col="blue") #Adding Moving Average to chart
 @
-\caption{quantmod Charts with EMA's}
+\caption{AORD index with MA's. Generated by quantmod}
 \end{figure}
-We then extract the EMA values via
-<<createEMA, results='hide'>>=
-EMA1=addEMA(n=10,col=2)
-EMA1Vals=EMA1@TA.values
-EMA2=addEMA(n=20)
-EMA2Vals=EMA2@TA.values
+
+
+The code in the "Main.R" file runs through this for the AORD index from Yahoo finance using StrategyTester. The final results of portfolio value of strategy are in Figure~\ref{fig:ResMA}. Note, I've assumed interest rates are zero, so when only cash position, we have no change in portfolio value. This is easy to change in future.
+\begin{figure}\label{fig:ResMA}
+\center
+<<resValMA,echo=FALSE,fig.height=4,cache=TRUE>>=
+plot.zoo(ResZoo[-1,1],ylim=c(-20000,70000),screens=c(1),col=c("blue"),xaxt='n',xlab="Date",ylab="Portfolio Value")
+abline(v=TD,col="red")  
+abline(h=0,col="black")
+axis(side=1,at=marks,labels=labs)
 @
-and combine them into the data object, \textbf{chartData} we will use for StrategyTester
-<<stratData>>=
+\caption{AORD index with MA's. Generated by quantmod}
+\end{figure}
+
+
+\subsection{Data Import}
+The first portion of \textit{Main.R} code doesn't have much to do with the StrategyTester files. It just uses R and quantmod to load in data and construct the moving averages.
+
+First we load the libraries we need
+<<libraries,results='hide',cache=TRUE>>=
+library(xts)
+library(zoo)
+library(quantmod)
+@
+\noindent Then we set the working directory so that it will include the StrategyTester class files correctly, 
+<<setwd,cache=TRUE>>=
+setwd("~/Documents/R/StrategyTester")
+@
+\noindent Next we import data. 
+<<dataImport,cache=TRUE>>=
+AORD = as.xts(as.zoo(read.table("Data/AORD.csv",header=T,sep=",")))
+@
+\noindent The csv loaded here was one I prepared ealier using quantmod's canned functions for downloading yahoo data. 
+
+We then use quantmod to create the moving averages series by charting AORD then adding MAs, and extracting series values. I've supressed chart as it just Figure~\ref{fig:OutPutMA} above.
+<<quantmodChart,fig.height=3.5,results='hide',fig.keep='none',cache=TRUE>>=
+chartData = AORD['2008-02::2008-08']
+chartSeries(chartData,TA=NULL, theme="white")
+EMA1=addEMA(n=10,col="green") #Adding Moving Average to chart
+EMA2=addEMA(n=20,col="blue") #Adding Moving Average to chart
+EMA1Vals=EMA1@TA.values #Extracting Vals
+EMA2Vals=EMA2@TA.values #Extracting Vals
+@
+\begin{remark}
+Quantmod, has a whole bunch of functions which add all different kinds of technical indicators (TA) to charts. 
+\end{remark}
+\noindent Then we convert MA's to xts and combine with the original AORD data = chartData.
+<<stratData,cache=TRUE>>=
 Series1 = as.xts(zoo(EMA1Vals,order.by=index(chartData)));colnames(Series1)="MAs"
 Series2 = as.xts(zoo(EMA2Vals,order.by=index(chartData)));colnames(Series2)="MAl"
 chartData = cbind.xts(chartData,Series1,Series2 )
@@ -85,7 +99,7 @@ Note that the beginning MA values don't exist as the first value in the series c
 
 \subsection{Market Data, Trade and Portfolio Classes}
 
-Following other finance libraries, I have broken down the parts of the trading algorithm into the following logical pieces, which are implemented as classes:
+Following other finance libraries, like quantlib, I have broken down pricing trades into the following logical pieces, which are implemented as classes:
 \begin{itemize}
 \item Market Data. This contains data inputs, and interface to other classes.
 \item Trades. These objects contain info about trades that is not dynamic market data. Notionals, TradeType. Also need functions to Price, Value given market data.
@@ -163,9 +177,7 @@ To implement strategy we define load the the TradeStrategy classes.
 <<ldTradeStrategy, results='hide',warning=FALSE, error=FALSE>>=
 source('R/TradeStrategyClasses.R')
 @
-<<TradeStrategyforDec, include=FALSE>>=
-source('../R/TradeStrategyClasses.R')
-@
+
 
 This file implements a class \textbf{TradeStrategy}, which is described as follows.
 \begin{itemize}

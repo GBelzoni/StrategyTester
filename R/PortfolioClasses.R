@@ -17,6 +17,21 @@ source("R/TradeClasses.R")
     object$Trades[[length(object$Trades)+1]]=Trade
     return(object)
   }
+
+  #Need an addTrade function
+  print.Portfolio = function(object)
+  {
+    print(paste("Portfolio Name:", object$Name))
+	numberTrades = length(object$Trades)
+  	output =data.frame(matrix(nrow=numberTrades,ncol=3))
+  	colnames(output)= c("TradeName","Type","Notional")
+	for(j in 1:numberTrades)
+	{
+		Trade=(object$Trades[[j]])
+		output[j,]=c(Trade$Name,Trade$Type,Trade$Notional)
+	}
+    return(output)
+  }
   
   #Test Portfolio Class
   TradeList = list(T1,T2)    
@@ -25,7 +40,7 @@ source("R/TradeClasses.R")
   P1$Trades
   T3 = Trade("T3","Eq",200)
   P1$Trades[[length(P1$Trades)+1]]=T3
-  
+  print(P1) 
   
 #Class - PortfolioSlice 
   #Data MarketData, portfolio
